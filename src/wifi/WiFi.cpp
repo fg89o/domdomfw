@@ -44,11 +44,16 @@ bool DomDomWifiClass::begin()
     }
 
     ssid = DomDomWifi.readSTASSID();
+    pwd = DomDomWifi.readSTAPass();
     if (!(ssid.length() > 0 && ssid.length() < EEPROM_SSID_NAME_LENGTH))
     {
         Serial.println("...Usando valores wifi por defecto...");
         ssid = WIFI_STA_SSID_NAME;
+        pwd = WIFI_STA_PASSWORD;
     }
+
+    mDNS_enabled = EEPROM.read(EEPROM_MDNS_ENABLED_ADDRESS);
+    mDNS_hostname = EEPROM.readString(EEPROM_MDNS_HOSTNAME_ADDRESS);
 
     xTaskCreate(
         this->tInit,            /* Task function. */
@@ -152,9 +157,7 @@ int DomDomWifiClass::connectSTAWifi()
 {
     WiFi.mode(WIFI_STA);
 
-    String pwd = DomDomWifi.readSTAPass();
-    Serial.print(pwd);
-    return WiFi.begin(DomDomWifi.ssid.c_str(), pwd.c_str());
+    return WiFi.begin(DomDomWifi.ssid.c_str(), DomDomWifi.pwd.c_str());
 }
 
 // Crea un AP propio con la conexion

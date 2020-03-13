@@ -102,7 +102,7 @@
 #define EEPROM_SCHEDULE_FIRST_ADDRESS           139      // 1 byte por la cantidad + 50 puntos * 9 byte cada punto = 271
 #define EEPROM_MAX_SCHEDULE_POINTS              50
 #define EEPROM_NTP_ENABLED_ADDRESS              591
-#define EEPROM_MDNS_ENABLED                     592
+#define EEPROM_MDNS_ENABLED_ADDRESS             592
 #define EEPROM_MDNS_HOSTNAME_ADDRESS            593
 #define EEPROM_MDNS_HOSTNAME_LENGTH             32
 

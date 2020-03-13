@@ -52,10 +52,18 @@ void initEEPROM()
   {
     Serial.print("Poniendo EEPROM a 0\n");
     EEPROM.write(1,1);
-    for (int j=2; j < EEPROM_SIZE; j++)
-    {
-      EEPROM.write(j,0);
-    }
+
+    // for (int j=2; j < EEPROM_SIZE; j++)
+    // {
+    //   EEPROM.write(j,0);
+    // }
+
+    EEPROM.writeString(EEPROM_STA_SSID_NAME_ADDRESS, "");
+    EEPROM.writeString(EEPROM_STA_PASSWORD_ADDRESS, "");
+
+    EEPROM.write(EEPROM_MDNS_ENABLED_ADDRESS, MDNS_ENABLED);
+    EEPROM.writeString(EEPROM_MDNS_HOSTNAME_ADDRESS, MDNS_HOSTNAME);
+
     EEPROM.commit();
 
     DomDomChannelMgt.initEEPROM();

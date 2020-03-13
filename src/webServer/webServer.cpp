@@ -144,7 +144,7 @@ void DomDomWebServerClass::getWifiData(AsyncWebServerRequest *request)
    AsyncResponseStream *response = request->beginResponseStream("application/json");
     
    StaticJsonDocument<1024> jsonDoc;
-   jsonDoc["mode"] = DomDomWifi.getMode() == WIFI_MODE_AP ? 'AP' : 'STA';
+   jsonDoc["mode"] = DomDomWifi.getMode() == WIFI_MODE_AP ? "AP" : "STA";
    jsonDoc["sta_enabled"] = DomDomWifi.enabled;
    if (DomDomWifi.getMode() == WIFI_MODE_STA)
    {
