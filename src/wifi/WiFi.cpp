@@ -76,7 +76,7 @@ bool DomDomWifiClass::begin()
 void DomDomWifiClass::tInit(void * parameter)
 {
     DomDomWifi.isConnecting = true;
-
+    
     bool connected = false;
     if (DomDomWifi.enabled)
     {
@@ -202,6 +202,11 @@ int DomDomWifiClass::getMode()
     return WiFi.getMode();
 }
 
+int8_t DomDomWifiClass::RSSI()
+{
+    return WiFi.RSSI();
+}
+
 // Imprime los detalles de la red wifi a la que se esta conectado
 void DomDomWifiClass::printWifiInfo()
 {
@@ -248,9 +253,9 @@ void DomDomWifiClass::printWifiInfo()
 }
 
 // Guarda el SSID para STA en la EEPROM
-bool DomDomWifiClass::saveSTASSID(const char* ssid)
+bool DomDomWifiClass::saveSTASSID()
 {
-    if (strlen(ssid) > EEPROM_SSID_NAME_LENGTH)
+    if (strlen(ssid.c_str()) > EEPROM_SSID_NAME_LENGTH)
     {
         Serial.println("ERROR: SSID name too long!");
         return false;
@@ -272,15 +277,15 @@ String DomDomWifiClass::readSTASSID()
 }
 
 // Guarda el SSID para STA en la EEPROM
-bool DomDomWifiClass::saveSTAPass(const char* pass)
+bool DomDomWifiClass::saveSTAPass()
 {
-    if (strlen(pass) > EEPROM_STA_PASSWORD_LENGTH)
+    if (strlen(pwd.c_str()) > EEPROM_STA_PASSWORD_LENGTH)
     {
         Serial.println("ERROR: Password too long!");
         return false;
     }
 
-    EEPROM.writeString(EEPROM_STA_PASSWORD_ADDRESS, pass);
+    EEPROM.writeString(EEPROM_STA_PASSWORD_ADDRESS, pwd);
     bool result = EEPROM.commit();
     if (!result)
     {
@@ -298,6 +303,13 @@ String DomDomWifiClass::readSTAPass()
 bool DomDomWifiClass::saveStatus()
 {
     EEPROM.write(EEPROM_STA_ENABLED_ADDRESS, enabled);
+    return EEPROM.commit();
+}
+
+bool DomDomWifiClass::saveMDNSSettings()
+{
+    EEPROM.writeBool(EEPROM_MDNS_ENABLED_ADDRESS, mDNS_enabled);
+    EEPROM.writeString(EEPROM_MDNS_HOSTNAME_ADDRESS, mDNS_hostname);
     return EEPROM.commit();
 }
 

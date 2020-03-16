@@ -56,7 +56,8 @@ void DomDomWebServerClass::begin()
     
     // AJAX para el wifi
     _server->on("/red", HTTP_GET, getWifiData);
-    
+    _server->on("/red", HTTP_POST, [](AsyncWebServerRequest * request){}, NULL, setWifiData);
+
     _server->onNotFound([](AsyncWebServerRequest *request) {
         Serial.print("[Web server] Not found\n");
         AsyncWebServerResponse *response = request->beginResponse(400, "text/plain", "Not found");
@@ -141,22 +142,85 @@ void DomDomWebServerClass::setRTCData(AsyncWebServerRequest * request, uint8_t *
 
 void DomDomWebServerClass::getWifiData(AsyncWebServerRequest *request)
 {
-   AsyncResponseStream *response = request->beginResponseStream("application/json");
+    AsyncResponseStream *response = request->beginResponseStream("application/json");
+        
+    StaticJsonDocument<1024> jsonDoc;
+    jsonDoc["mode"] = DomDomWifi.getMode() == WIFI_MODE_AP ? "AP" : "STA";
+    jsonDoc["sta_enabled"] = DomDomWifi.enabled;
+    jsonDoc["rssi"] = DomDomWifi.RSSI();
+    jsonDoc["current_channel"] = WiFi.channel();
+    if (DomDomWifi.getMode() == WIFI_MODE_STA)
+    {
+        jsonDoc["ssid"] = DomDomWifi.ssid;
+        jsonDoc["current_gateway"] = WiFi.gatewayIP().toString();
+        jsonDoc["current_ip"] = WiFi.localIP().toString();
+        jsonDoc["current_dns"] = WiFi.dnsIP().toString();
+    }
+    else
+    {
+        jsonDoc["ssid"] = WIFI_AP_SSID_NAME;
+        jsonDoc["current_gateway"] = WiFi.softAPIP().toString();
+        jsonDoc["current_ip"] = WiFi.softAPIP().toString();
+        jsonDoc["current_dns"] = "0.0.0.0";
+    }
     
-   StaticJsonDocument<1024> jsonDoc;
-   jsonDoc["mode"] = DomDomWifi.getMode() == WIFI_MODE_AP ? "AP" : "STA";
-   jsonDoc["sta_enabled"] = DomDomWifi.enabled;
-   if (DomDomWifi.getMode() == WIFI_MODE_STA)
-   {
-       jsonDoc["ssid"] = DomDomWifi.ssid;
-   }
-   jsonDoc["mdns_enabled"] = DomDomWifi.mDNS_enabled;
-   jsonDoc["mdns_hostname"] = DomDomWifi.mDNS_hostname;
+    jsonDoc["mdns_enabled"] = DomDomWifi.mDNS_enabled;
+    jsonDoc["mdns_hostname"] = DomDomWifi.mDNS_hostname;
 
-   serializeJson(jsonDoc, *response);
-   
-   response->addHeader("Access-Control-Allow-Origin", "*");
-   request->send(response);
+    serializeJson(jsonDoc, *response);
+    
+    response->addHeader("Access-Control-Allow-Origin", "*");
+    request->send(response);
+}
+
+void DomDomWebServerClass::setWifiData(AsyncWebServerRequest * request, uint8_t *data, size_t len, size_t index, size_t total)
+{
+    String bodyContent = GetBodyContent(data, len);
+    
+    DynamicJsonDocument doc(1024);;
+    DeserializationError err = deserializeJson(doc, bodyContent);
+    if (err) { 
+        request->send(400); 
+        return;
+    }
+
+    if (doc.containsKey("sta_enabled"))
+    {
+        DomDomWifi.enabled = doc["sta_enabled"];
+        if (DomDomWifi.enabled)
+        {
+            String recv_ssid = doc["ssid"];
+            DomDomWifi.ssid = recv_ssid;
+            String recv_pwd = doc["pwd"];
+            DomDomWifi.pwd = recv_pwd;
+        }
+        else
+        {
+            DomDomWifi.ssid = "";
+            DomDomWifi.pwd = "";
+        }
+
+        DomDomWifi.saveSTASSID();
+        DomDomWifi.saveSTAPass();
+        DomDomWifi.saveStatus();
+    }
+    
+    if (doc.containsKey("mdns_enabled"))
+    {
+        DomDomWifi.mDNS_enabled = doc["mdns_enabled"];
+    }
+
+    if (doc.containsKey("mdns_hostname"))
+    {
+        String name = doc["mdns_hostname"];
+        DomDomWifi.mDNS_hostname = name;
+    }
+    
+    DomDomWifi.saveMDNSSettings();
+
+    AsyncResponseStream *response = request->beginResponseStream("application/json");
+    response->addHeader("Access-Control-Allow-Origin", "*");
+    request->send(response);
 }
 
 #if !defined(NO_GLOBAL_INSTANCES)

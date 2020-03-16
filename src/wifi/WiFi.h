@@ -43,11 +43,13 @@ class DomDomWifiClass
         bool isConnecting;
         void printWifiInfo();
         int getMode();
-        bool saveSTASSID(const char* ssid);
+        int8_t RSSI();
+        bool saveSTASSID();
         String readSTASSID();
-        bool saveSTAPass(const char* pass);
+        bool saveSTAPass();
         String readSTAPass();
         bool saveStatus();
+        bool saveMDNSSettings();
 };
 
 #if !defined(NO_GLOBAL_INSTANCES)

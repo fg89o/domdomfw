@@ -38,6 +38,7 @@ class DomDomWebServerClass
         static void getRTCData(AsyncWebServerRequest *request);
         static void setRTCData(AsyncWebServerRequest * request, uint8_t *data, size_t len, size_t index, size_t total);
         static void getWifiData(AsyncWebServerRequest *request);
+        static void setWifiData(AsyncWebServerRequest * request, uint8_t *data, size_t len, size_t index, size_t total);
 };
 
 #if !defined(NO_GLOBAL_INSTANCES)
