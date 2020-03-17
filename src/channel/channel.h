@@ -37,6 +37,7 @@ class DomDomChannelClass
         uint16_t _min_pwm;
         uint16_t _max_pwn;
         bool _ready;
+        bool _enabled;
         void calcPWMLineal(DomDomSchedulePoint *previous, DomDomSchedulePoint *next, DateTime &horaAnterior, DateTime &horaSiguiente);
         void calcPWMNoLineal(DomDomSchedulePoint *previous, DomDomSchedulePoint *next, DateTime &horaAnterior, DateTime &horaSiguiente);
 
@@ -48,9 +49,13 @@ class DomDomChannelClass
         uint8_t pwm_pin() const {return _pwm_pin; };
         uint16_t current_pwm() const {return _current_pwm; }
         uint8_t getNum() const { return _channel_num; }
+        uint8_t getResolution() const { return _resolution; }
+        bool getEnabled() const {return _enabled; };
         bool begin();
+        bool end();
         bool setPWMValue(uint16_t value);
         bool setPWMResolution(uint8_t value);
+        bool setEnabled(bool enabled);
         void update();
         bool save();
         bool loadFromEEPROM();

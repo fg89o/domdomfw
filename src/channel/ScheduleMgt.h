@@ -28,14 +28,22 @@
 
 class DomDomScheduleMgtClass
 {
-public:
-    std::vector<DomDomSchedulePoint *> schedulePoints;
-    bool getShedulePoint(DateTime &dt, DomDomSchedulePoint *&point, bool previous);
-    bool save();
-    bool load();
-    void addSchedulePoint(DomDomDayOfWeek day, uint8_t hour, uint8_t minute, bool fade);
-    DomDomScheduleMgtClass();
-    ~DomDomScheduleMgtClass();
+    private:
+        bool _started = false;
+        TaskHandle_t *taskHandle;
+        static void tInit(void * parameter);
+
+    public:
+        std::vector<DomDomSchedulePoint *> schedulePoints;
+        bool getShedulePoint(DateTime &dt, DomDomSchedulePoint *&point, bool previous);
+        bool save();
+        bool load();
+        bool begin();
+        bool end();
+        bool isStarted() const { return _started; };
+        void addSchedulePoint(DomDomDayOfWeek day, uint8_t hour, uint8_t minute, bool fade);
+        DomDomScheduleMgtClass();
+        ~DomDomScheduleMgtClass();
 };
 
 

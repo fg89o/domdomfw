@@ -92,14 +92,14 @@ void DomDomRTCClass::beginNTP(){
             DomDomRTC.rtc.adjust(dt);
         }
 
-        xTaskCreate(
-            this->NTPUpdate,        /* Task function. */
-            "NTP_Task",             /* String with name of task. */
-            10000,                  /* Stack size in bytes. */
-            NULL,                   /* Parameter passed as input of the task */
-            1,                      /* Priority of the task. */
-            this->_ntp_task         /* Task handle. */
-        );
+        // xTaskCreate(
+        //     this->NTPUpdate,        /* Task function. */
+        //     "NTP_Task",             /* String with name of task. */
+        //     10000,                  /* Stack size in bytes. */
+        //     NULL,                   /* Parameter passed as input of the task */
+        //     1,                      /* Priority of the task. */
+        //     this->_ntp_task         /* Task handle. */
+        // );
     }
     
 }

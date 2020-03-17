@@ -28,8 +28,6 @@
 #include "channel/channelMgt.h"
 #include "webServer/webServer.h"
 
-int _lastMinute = -1;
-
 void initEEPROM()
 {
   
@@ -87,29 +85,33 @@ void setup()
   // Inicializacion del RTC
   DomDomRTC.begin();  
 
+  // Configuracion de canales
+  DomDomChannelMgt.loadAll();
+  DomDomChannelMgt.begin();
+
   // Puntos de programacion
   DomDomScheduleMgt.load();
 
   // Configuracion de programacion
-  DomDomSchedulePoint *point = new DomDomSchedulePoint(ALL, 13, 44);
+  DomDomSchedulePoint *point = new DomDomSchedulePoint(ALL, 22, 43);
   point->value[0] = 100;
   point->value[1] = 100;
   point->value[2] = 100;
   DomDomScheduleMgt.schedulePoints.push_back(point);
 
-  DomDomSchedulePoint *point2 = new DomDomSchedulePoint(ALL, 13, 46);
+  DomDomSchedulePoint *point2 = new DomDomSchedulePoint(ALL, 22, 45);
   point2->value[0] = 100;
   point2->value[1] = 0;
   point2->value[2] = 0;
   DomDomScheduleMgt.schedulePoints.push_back(point2);
 
-  DomDomSchedulePoint *point3 = new DomDomSchedulePoint(ALL, 13, 47);
+  DomDomSchedulePoint *point3 = new DomDomSchedulePoint(ALL, 22, 46);
   point3->value[0] = 100;
   point3->value[1] = 0;
   point3->value[2] = 0;
   DomDomScheduleMgt.schedulePoints.push_back(point3);
 
-  DomDomSchedulePoint *point4 = new DomDomSchedulePoint(ALL, 13, 49);
+  DomDomSchedulePoint *point4 = new DomDomSchedulePoint(ALL, 22, 48);
   point4->value[0] = 100;
   point4->value[1] = 100;
   point4->value[2] = 100;
@@ -117,22 +119,11 @@ void setup()
 
   // DomDomScheduleMgt.save();
 
-  // Configuracion de canales
-  DomDomChannelMgt.loadAll();
-  DomDomChannelMgt.begin();
-
   // Servidor web
   DomDomWebServer.begin();
-
+  DomDomScheduleMgt.begin();
 }
 
 void loop()
 {
-  if (_lastMinute != DomDomRTC.rtc.now().minute())
-  {
-    _lastMinute = DomDomRTC.rtc.now().minute();
-    DomDomChannelMgt.update();
-  }
-  
-  delay(1000);
 }

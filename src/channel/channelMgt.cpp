@@ -49,6 +49,14 @@ void DomDomChannelMgtClass::update()
     }
 }
 
+void DomDomChannelMgtClass::end()
+{
+    for (int i = 0; i < channels.size() ; i++)
+    {
+        channels[i]->end();
+    }
+}
+
 void DomDomChannelMgtClass::loadAll()
 {
     for (int i = 0; i < channels.size() ; i++)

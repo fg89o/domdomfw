@@ -26,6 +26,7 @@
 #include "rtc/rtc.h"
 #include "configuration.h"
 #include "wifi/WiFi.h"
+#include "channel/channelMgt.h"
 
 String GetBodyContent(uint8_t *data, size_t len)
 {
@@ -57,6 +58,13 @@ void DomDomWebServerClass::begin()
     // AJAX para el wifi
     _server->on("/red", HTTP_GET, getWifiData);
     _server->on("/red", HTTP_POST, [](AsyncWebServerRequest * request){}, NULL, setWifiData);
+
+    // AJAX para los canales
+    _server->on("/canales", HTTP_GET, getChannelsData);
+    _server->on("/canales", HTTP_POST, [](AsyncWebServerRequest * request){}, NULL, setChannelsData);
+
+    // AJAX para el reset
+    _server->on("/reset", HTTP_POST, [](AsyncWebServerRequest * request){}, NULL, setRestart);
 
     _server->onNotFound([](AsyncWebServerRequest *request) {
         Serial.print("[Web server] Not found\n");
@@ -221,6 +229,91 @@ void DomDomWebServerClass::setWifiData(AsyncWebServerRequest * request, uint8_t 
     AsyncResponseStream *response = request->beginResponseStream("application/json");
     response->addHeader("Access-Control-Allow-Origin", "*");
     request->send(response);
+}
+
+void DomDomWebServerClass::getChannelsData(AsyncWebServerRequest *request)
+{
+    AsyncResponseStream *response = request->beginResponseStream("application/json");
+        
+    StaticJsonDocument<1024> jsonDoc;
+    
+    JsonArray ports = jsonDoc.createNestedArray("canales");
+
+    for (int i = 0; i < DomDomChannelMgt.channels.size(); i++)
+    {
+        JsonObject obj = ports.createNestedObject();
+        obj["enabled"] = DomDomChannelMgt.channels[i]->getEnabled();
+        obj["channel_num"] = DomDomChannelMgt.channels[i]->getNum();
+        obj["resolution"] = DomDomChannelMgt.channels[i]->getResolution();
+        obj["min_pwm"] = DomDomChannelMgt.channels[i]->min_limit_pwm;
+        obj["max_pwm"] = DomDomChannelMgt.channels[i]->max_limit_pwm;
+        obj["current_pwm"] = DomDomChannelMgt.channels[i]->current_pwm();
+    }
+
+    serializeJson(jsonDoc, *response);
+    
+    response->addHeader("Access-Control-Allow-Origin", "*");
+    request->send(response);
+}
+
+void DomDomWebServerClass::setChannelsData(AsyncWebServerRequest * request, uint8_t *data, size_t len, size_t index, size_t total)
+{
+    String bodyContent = GetBodyContent(data, len);
+    
+    DynamicJsonDocument doc(2048);;
+    DeserializationError err = deserializeJson(doc, bodyContent);
+
+    if (err) { 
+        request->send(400); 
+        return;
+    }
+
+    if (doc.containsKey("canales"))
+    {
+        JsonArray canales = doc["canales"].as<JsonArray>();
+        for(JsonObject canal : canales)
+        {
+            DomDomChannelClass *channel = DomDomChannelMgt.channels[canal["channel_num"]];
+            channel->setEnabled(canal["enabled"]);
+            channel->max_limit_pwm = canal["max_pwm"];
+            channel->min_limit_pwm = canal["min_pwm"];
+            channel->setPWMValue(channel->current_pwm());
+            channel->save();
+        }
+
+    }
+
+    AsyncResponseStream *response = request->beginResponseStream("application/json");
+    response->addHeader("Access-Control-Allow-Origin", "*");
+    request->send(response);
+}
+
+void DomDomWebServerClass::setRestart(AsyncWebServerRequest * request, uint8_t *data, size_t len, size_t index, size_t total)
+{
+    String bodyContent = GetBodyContent(data, len);
+    
+    DynamicJsonDocument doc(1024);;
+    DeserializationError err = deserializeJson(doc, bodyContent);
+
+    AsyncResponseStream *response = request->beginResponseStream("application/json");
+    response->addHeader("Access-Control-Allow-Origin", "*");
+
+    if (err) { 
+        request->send(400); 
+        return;
+    }
+
+    if (doc.containsKey("reset"))
+    {
+        if (doc["reset"])
+        {
+            request->send(response);
+            delay(2000);
+            ESP.restart();
+        }
+    }
+
+    request->send(400);
 }
 
 #if !defined(NO_GLOBAL_INSTANCES)

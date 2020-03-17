@@ -27,12 +27,14 @@ DomDomChannelClass::DomDomChannelClass(char num)
 {
     _ready = false;
     _channel_num = num;
+    _enabled = true;
 }
 
 // Constructor
 DomDomChannelClass::DomDomChannelClass(char num, char pwm_pin, char resolution)
 {
     _ready = false;
+    _enabled = true;
     _channel_num = num;
     _pwm_pin = pwm_pin;
     _current_pwm = 0;
@@ -40,18 +42,17 @@ DomDomChannelClass::DomDomChannelClass(char num, char pwm_pin, char resolution)
     setPWMResolution(resolution);
     max_limit_pwm = _max_pwn;
     min_limit_pwm = _min_pwm;
+
+    pinMode(_pwm_pin, OUTPUT);
 }
 
 // Incia el control del canal
 bool DomDomChannelClass::begin()
 {
-    // Pin Mode configuration
-    if (_pwm_pin == 0)
+    if (_pwm_pin == 0 || !_enabled)
     {
         return false;
     }
-
-    pinMode(_pwm_pin, OUTPUT);
 
     // configure LED PWM functionalitites
     ledcSetup(_channel_num, 5000, _resolution);
@@ -66,9 +67,37 @@ bool DomDomChannelClass::begin()
     return true;
 }
 
+bool DomDomChannelClass::end()
+{
+    _ready = false;
+    ledcDetachPin(_pwm_pin);
+
+    return true;
+}
+
+bool DomDomChannelClass::setEnabled(bool enabled)
+{
+    if (_enabled != enabled)
+    {
+        _enabled = enabled;
+
+        if (_ready && !enabled)
+        {
+            end();
+        }
+    }
+
+    return true;
+}
+
 // Cambia el valor PWM del canal
 bool DomDomChannelClass::setPWMValue(uint16_t value)
 {
+    if (!_ready)
+    {
+        return false;
+    }
+
     if (value > max_limit_pwm)
     {
         value =  max_limit_pwm;
@@ -81,11 +110,8 @@ bool DomDomChannelClass::setPWMValue(uint16_t value)
         Serial.printf("ERROR: valor pwm menor que el minimo. Valor cambiado a %d\n", value);
     }
 
-    if (_ready)
-    {
-        ledcWrite(_channel_num, value);
-    }
-    
+    ledcWrite(_channel_num, value);
+
     _current_pwm = value;
 
     return true;
@@ -133,7 +159,7 @@ void DomDomChannelClass::update()
         return;
     }
 
-    Serial.printf("[Channel %d] programacion previa obtenida", _channel_num);
+    Serial.printf("[Channel %d] programacion previa obtenida: %d:%d", _channel_num, puntoAnterior->hour, puntoAnterior->minute);
 
     correct = DomDomScheduleMgt.getShedulePoint(horaSiguiente, puntoSiguiente, false);
     if (!correct)
@@ -142,7 +168,7 @@ void DomDomChannelClass::update()
         return;
     }
 
-    Serial.printf("[Channel %d] programacion posterior obtenida", _channel_num);
+    Serial.printf("[Channel %d] programacion posterior obtenida: %d:%d", _channel_num, puntoSiguiente->hour, puntoSiguiente->minute);
 
     if(!puntoSiguiente->fade)
     {
@@ -176,11 +202,12 @@ void DomDomChannelClass::calcPWMLineal(DomDomSchedulePoint *puntoAnterior, DomDo
     else
     {
         int seconds = (DomDomRTC.rtc.now() - horaAnterior).totalseconds();
-        float secPorcentaje = abs((seconds * 100) / diffTotSeconds);
+        float secPorcentaje = (seconds * 100) / diffTotSeconds;
 
         int diffValue = (puntoSiguiente->value[_channel_num] - puntoAnterior->value[_channel_num]) * (secPorcentaje/100);
+        double valor = (max_limit_pwm - min_limit_pwm) * ((puntoAnterior->value[_channel_num] + diffValue) / 100);
+
         int new_pwm = 0;
-        double valor = (max_limit_pwm - min_limit_pwm) * (puntoAnterior->value[_channel_num] + diffValue) / 100;
         new_pwm = min_limit_pwm + valor;
         if (new_pwm != _current_pwm)
         {
@@ -205,8 +232,8 @@ void DomDomChannelClass::calcPWMNoLineal(DomDomSchedulePoint *puntoAnterior, Dom
 bool DomDomChannelClass::saveCurrentPWM()
 {
     int address = EEPROM_CHANNEL_FIRST_ADDRESS ;
-    address += _channel_num  * 7;
-    address += 5;
+    address += _channel_num  * EEPROM_CHANNEL_MEMORY_SIZE;
+    address += 6;
 
     EEPROM.writeUShort(address, _current_pwm);
     return EEPROM.commit();
@@ -215,9 +242,11 @@ bool DomDomChannelClass::saveCurrentPWM()
 bool DomDomChannelClass::save()
 {
     int address = EEPROM_CHANNEL_FIRST_ADDRESS ;
-    address += _channel_num * 7;
+    address += _channel_num * EEPROM_CHANNEL_MEMORY_SIZE;
 
     EEPROM.write(address, (_channel_num+1));
+    address += 1;
+    EEPROM.writeBool(address, _enabled);
     address += 1;
     EEPROM.writeUShort(address, max_limit_pwm);
     address += 2;
@@ -238,10 +267,12 @@ bool DomDomChannelClass::save()
 bool DomDomChannelClass::loadFromEEPROM()
 {
     int address = EEPROM_CHANNEL_FIRST_ADDRESS ;
-    address += _channel_num * 7;
+    address += _channel_num * EEPROM_CHANNEL_MEMORY_SIZE;
 
     if (EEPROM.read(address) == (_channel_num+1))
     {
+        address += 1;
+        setEnabled(EEPROM.readBool(address));
         address += 1;
         max_limit_pwm = EEPROM.readUShort(address);
         address += 2;
@@ -264,8 +295,10 @@ bool DomDomChannelClass::loadFromEEPROM()
 void DomDomChannelClass::initEEPROM()
 {
     int address = EEPROM_CHANNEL_FIRST_ADDRESS ;
-    address += _channel_num * 7;
+    address += _channel_num * EEPROM_CHANNEL_MEMORY_SIZE;
 
+    EEPROM.write(address,0);
+    address += 1;
     EEPROM.write(address,0);
     address += 1;
     EEPROM.writeUShort(address,0);

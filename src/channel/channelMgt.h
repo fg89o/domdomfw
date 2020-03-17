@@ -31,6 +31,7 @@ class DomDomChannelMgtClass
         DomDomChannelMgtClass();
         std::vector<DomDomChannelClass *> channels;
         void begin();
+        void end();
         void update();
         void saveAll();
         void loadAll();

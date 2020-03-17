@@ -21,6 +21,7 @@
 #include "ScheduleMgt.h"
 #include <EEPROM.h>
 #include "configuration.h"
+#include "channelMgt.h"
 
 DomDomScheduleMgtClass::DomDomScheduleMgtClass(/* args */)
 {
@@ -189,6 +190,46 @@ void DomDomScheduleMgtClass::addSchedulePoint(DomDomDayOfWeek day, uint8_t hour,
     }
 
     schedulePoints.push_back(new DomDomSchedulePoint(day, hour, minute, fade));
+}
+
+bool DomDomScheduleMgtClass::begin()
+{
+    if (!_started)
+    {
+        _started = true;
+
+        xTaskCreate(
+            this->tInit,            /* Task function. */
+            "ScheduleInitTask",     /* String with name of task. */
+            10000,                  /* Stack size in bytes. */
+            NULL,                   /* Parameter passed as input of the task */
+            1,                      /* Priority of the task. */
+            taskHandle              /* Task handle. */
+        );
+    }
+
+    return true;
+}
+
+bool DomDomScheduleMgtClass::end()
+{
+    if (_started)
+    {
+        vTaskDelete(taskHandle);
+        _started = false;
+    }
+
+    return true;
+}
+
+void DomDomScheduleMgtClass::tInit(void *parameter)
+{
+    while(true)
+    {
+        DomDomChannelMgt.update();
+        const int next_ms = (61 - DomDomRTC.rtc.now().second()) * 1000;
+        vTaskDelay(next_ms / portTICK_PERIOD_MS);
+    }
 }
 
 #if !defined(NO_GLOBAL_INSTANCES)
