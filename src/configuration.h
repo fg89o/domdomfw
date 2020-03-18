@@ -13,6 +13,18 @@
 #define BAUDRATE 9600
 
 //===========================================================================
+//============================ STATUS LED CONTROL  ==========================
+//===========================================================================
+
+#define LED_STATUS_RESOLUTION 10
+#define LED_STATUS_CHANNEL 10
+#define LED_STATUS_BLINK_DELAY 100
+
+#define LED_RED_PIN     5
+#define LED_GREEN_PIN   18
+#define LED_BLUE_PIN    19
+
+//===========================================================================
 //============================ WIFI Settings  ===============================
 //===========================================================================
 
@@ -59,9 +71,9 @@
 //============================ CHANNELS SECTION =============================
 //===========================================================================
 
-#define CHANNEL_1_PWM_PIN       18  // AZUL
-#define CHANNEL_2_PWM_PIN       17  // VERDE
-#define CHANNEL_3_PWM_PIN       16  // ROJO
+#define CHANNEL_1_PWM_PIN       25  // AZUL
+#define CHANNEL_2_PWM_PIN       26  // VERDE
+#define CHANNEL_3_PWM_PIN       27  // ROJO
 #define CHANNEL_4_PWM_PIN       0
 #define CHANNEL_5_PWM_PIN       0
 

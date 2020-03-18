@@ -23,6 +23,7 @@
 #include <ESPmDNS.h>
 #include <EEPROM.h>
 #include "configuration.h"
+#include "statusLedControl/statusLedControl.h"
 
 DomDomWifiClass::DomDomWifiClass()
 {
@@ -53,6 +54,8 @@ bool DomDomWifiClass::begin()
     mDNS_hostname = EEPROM.readString(EEPROM_MDNS_HOSTNAME_ADDRESS);
 
     connect();
+
+    DomDomStatusLedControl.setWifiMode(getMode());
 
     return true;
 }

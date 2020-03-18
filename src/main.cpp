@@ -27,6 +27,7 @@
 #include "channel/ScheduleMgt.h"
 #include "channel/channelMgt.h"
 #include "webServer/webServer.h"
+#include "statusLedControl/statusLedControl.h"
 
 void initEEPROM()
 {
@@ -74,8 +75,12 @@ void setup()
   Serial.println(" DomDom Firmware \n Copyright (c) 2020 DomDomFirmware ");
   Serial.println("===============================================");
 
+  // Inicializamos la eeprom
   initEEPROM();
 
+  // Inicializamos el control del led de estado
+  DomDomStatusLedControl.begin();
+  
   // Inicializa el wifi
   DomDomWifi.begin();
 
@@ -123,7 +128,7 @@ void setup()
 
 void loop()
 {
-  
+
   /************************************************
    * 
    *  EN ESTE PROYECTO EL LOOP() ESTARA VACIO 

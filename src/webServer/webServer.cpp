@@ -27,6 +27,7 @@
 #include "configuration.h"
 #include "wifi/WiFi.h"
 #include "channel/channelMgt.h"
+#include "statusLedControl/statusLedControl.h"
 
 String GetBodyContent(uint8_t *data, size_t len)
 {
@@ -301,7 +302,9 @@ void DomDomWebServerClass::setRestart(AsyncWebServerRequest * request, uint8_t *
         if (doc["reset"])
         {
             request->send(response);
-            delay(2000);
+            
+            DomDomStatusLedControl.blink(10);
+
             ESP.restart();
         }
     }

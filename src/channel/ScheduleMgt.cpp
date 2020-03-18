@@ -22,6 +22,7 @@
 #include <EEPROM.h>
 #include "configuration.h"
 #include "channelMgt.h"
+#include "statusLedControl/statusLedControl.h"
 
 DomDomScheduleMgtClass::DomDomScheduleMgtClass(/* args */)
 {
@@ -224,6 +225,8 @@ bool DomDomScheduleMgtClass::end()
 
 void DomDomScheduleMgtClass::update()
 {
+    DomDomStatusLedControl.blink(1);
+
     DateTime now = DomDomRTC.now();
     Serial.printf("[Schedule] %d:%d Comprobando programacion\n", now.hour(), now.minute());
 
