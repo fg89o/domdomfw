@@ -51,17 +51,14 @@ void initEEPROM()
     Serial.print("Poniendo EEPROM a 0\n");
     EEPROM.write(1,1);
 
-    // for (int j=2; j < EEPROM_SIZE; j++)
-    // {
-    //   EEPROM.write(j,0);
-    // }
-
     EEPROM.writeString(EEPROM_STA_SSID_NAME_ADDRESS, "");
     EEPROM.writeString(EEPROM_STA_PASSWORD_ADDRESS, "");
 
     EEPROM.write(EEPROM_MDNS_ENABLED_ADDRESS, MDNS_ENABLED);
     EEPROM.writeString(EEPROM_MDNS_HOSTNAME_ADDRESS, MDNS_HOSTNAME);
 
+    EEPROM.writeBool(EEPROM_NTP_ENABLED_ADDRESS, NTP_ENABLED);
+    
     EEPROM.commit();
 
     DomDomChannelMgt.initEEPROM();
@@ -93,25 +90,25 @@ void setup()
   DomDomScheduleMgt.load();
 
   // Configuracion de programacion
-  DomDomSchedulePoint *point = new DomDomSchedulePoint(ALL, 22, 43);
+  DomDomSchedulePoint *point = new DomDomSchedulePoint(ALL, 23, 42);
   point->value[0] = 100;
   point->value[1] = 100;
   point->value[2] = 100;
   DomDomScheduleMgt.schedulePoints.push_back(point);
 
-  DomDomSchedulePoint *point2 = new DomDomSchedulePoint(ALL, 22, 45);
+  DomDomSchedulePoint *point2 = new DomDomSchedulePoint(ALL, 23, 44);
   point2->value[0] = 100;
   point2->value[1] = 0;
   point2->value[2] = 0;
   DomDomScheduleMgt.schedulePoints.push_back(point2);
 
-  DomDomSchedulePoint *point3 = new DomDomSchedulePoint(ALL, 22, 46);
+  DomDomSchedulePoint *point3 = new DomDomSchedulePoint(ALL, 23, 13);
   point3->value[0] = 100;
   point3->value[1] = 0;
   point3->value[2] = 0;
   DomDomScheduleMgt.schedulePoints.push_back(point3);
 
-  DomDomSchedulePoint *point4 = new DomDomSchedulePoint(ALL, 22, 48);
+  DomDomSchedulePoint *point4 = new DomDomSchedulePoint(ALL, 23, 15);
   point4->value[0] = 100;
   point4->value[1] = 100;
   point4->value[2] = 100;

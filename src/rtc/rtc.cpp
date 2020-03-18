@@ -19,6 +19,8 @@
  */
 
 #include "rtc.h"
+#include "time.h"
+#include "sys/time.h"
 #include <EEPROM.h>
 #include <Wire.h>
 #include "../wifi/WiFi.h"
@@ -26,13 +28,10 @@
 
 DomDomRTCClass::DomDomRTCClass(){}
 
-// Inicia le proceso de conexcion WIFI.
-// Si hay un SSID al que conectarse lo intenta. 
-// En caso contrario o de error crea su propio AP para tener conexion.
-// Al final inicia el servicio mDNS.
 bool DomDomRTCClass::begin()
 {
     Serial.println("Inicializando RTC");
+
     int attemps = 0;
     ready = false;
     while( !ready && attemps < RTC_BEGIN_ATTEMPS)
@@ -52,17 +51,11 @@ bool DomDomRTCClass::begin()
         rtc.adjust(DateTime(F(__DATE__), F(__TIME__)));
     }
 
-    Serial.printf("%s\n", rtc.now().timestamp().c_str());
+    int unixtime_sec = rtc.now().unixtime();
+    timeval epoch = {unixtime_sec, 0};
+    settimeofday((const timeval*)&epoch, 0);
 
-    bool use_ntp;
-    char saved_enabled = EEPROM.read(EEPROM_NTP_ENABLED_ADDRESS);
-    if (saved_enabled != 255)
-    {
-        use_ntp = saved_enabled == 1;
-    }else{
-        use_ntp = NTP_ENABLED;
-    }
-
+    bool use_ntp = EEPROM.read(EEPROM_NTP_ENABLED_ADDRESS);
     if (use_ntp && DomDomWifi.getMode() == 1)
     {
         beginNTP();
@@ -71,13 +64,24 @@ bool DomDomRTCClass::begin()
     return ready;
 }
 
-void DomDomRTCClass::update()
+bool DomDomRTCClass::updateFromNTP()
 {
-    timeClient->update();
+    bool result = false;
+    if (DomDomWifi.getMode() == 1)
+    {
+        result = timeClient->forceUpdate();
+        if (result)
+        {
+            DateTime dt (timeClient->getEpochTime());
+            adjust(dt);
+        }
+    }
+    
+    return result;
 }
 
-void DomDomRTCClass::beginNTP(){
-
+void DomDomRTCClass::beginNTP()
+{
     if (!_ntpStarted)
     {
         _ntpStarted = true;
@@ -85,23 +89,16 @@ void DomDomRTCClass::beginNTP(){
 
         timeClient = new NTPClient(_ntpUDP, NTP_SERVERNAME, NTP_TIMEZONEOFFSET, 60000);
         timeClient->begin();
-        
-        if (DomDomRTC.timeClient->forceUpdate())
-        {
-            DateTime dt (DomDomRTC.timeClient->getEpochTime());
-            DomDomRTC.rtc.adjust(dt);
-        }
 
-        // xTaskCreate(
-        //     this->NTPUpdate,        /* Task function. */
-        //     "NTP_Task",             /* String with name of task. */
-        //     10000,                  /* Stack size in bytes. */
-        //     NULL,                   /* Parameter passed as input of the task */
-        //     1,                      /* Priority of the task. */
-        //     this->_ntp_task         /* Task handle. */
-        // );
+        xTaskCreate(
+            this->NTPTask,        /* Task function. */
+            "NTP_Task",             /* String with name of task. */
+            10000,                  /* Stack size in bytes. */
+            NULL,                   /* Parameter passed as input of the task */
+            1,                      /* Priority of the task. */
+            this->_ntp_task         /* Task handle. */
+        );
     }
-    
 }
 
 void DomDomRTCClass::endNTP()
@@ -110,37 +107,27 @@ void DomDomRTCClass::endNTP()
     {
         _ntpStarted = false;
         timeClient->end();
+        vTaskDelete(_ntp_task);
     }
 }
 
-void DomDomRTCClass::NTPUpdate(void * parameter)
+void DomDomRTCClass::NTPTask(void * parameter)
 {
-    int count = 0;
-    while(DomDomRTC.NTPStarted())
+    while(true)
     {
-        if (count >= 1200 )
+        int ms = 0;
+        if (DomDomRTC.updateFromNTP())
         {
-            count = 0;
-            if (DomDomRTC.timeClient->forceUpdate())
-            {
-                DateTime dt (DomDomRTC.timeClient->getEpochTime());
-                DomDomRTC.rtc.adjust(dt);
-
-                Serial.printf("[NTP] Fecha y hora ajustada a %s por NTP\n",DomDomRTC.rtc.now().timestamp().c_str());
-            }
-            else
-            {
-                Serial.println("ERROR: NTP no recibio una respuesta.");
-            };
-        } 
+            ms = NTP_DELAY_ON_SUCCESS;
+        }
+        else
+        {
+            ms = NTP_DELAY_ON_FAILURE;
+            Serial.println("ERROR: NTP no recibio una respuesta.");
+        };
         
-        vTaskDelay(500 / portTICK_PERIOD_MS);
-        count++;
+        vTaskDelay(ms / portTICK_PERIOD_MS);
     }
-
-    DomDomRTC.endNTP();
-    
-    vTaskDelete(NULL);
 }
 
 void DomDomRTCClass::setNTPEnabled(bool enabled)
@@ -157,6 +144,26 @@ void DomDomRTCClass::setNTPEnabled(bool enabled)
 
     EEPROM.write(EEPROM_NTP_ENABLED_ADDRESS, enabled);
     EEPROM.commit();
+}
+
+DateTime DomDomRTCClass::now()
+{
+    struct timeval epoch;
+    gettimeofday(&epoch, NULL);
+
+    DateTime dt (epoch.tv_sec);
+
+    return dt;
+}
+
+void DomDomRTCClass::adjust(DateTime dt)
+{
+    timeval epoch = {dt.unixtime(), 0};
+
+    rtc.adjust(dt);
+    settimeofday((const timeval*)&epoch, 0);
+
+    Serial.printf("[RTC] Fecha y hora ajustada a %s\n",dt.timestamp().c_str());
 }
 
 #if !defined(NO_GLOBAL_INSTANCES)

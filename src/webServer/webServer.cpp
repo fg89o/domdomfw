@@ -87,7 +87,7 @@ void DomDomWebServerClass::getRTCData(AsyncWebServerRequest *request)
    jsonDoc["enabled"] = DomDomRTC.NTPStarted();
    jsonDoc["servername"] = NTP_SERVERNAME;
    jsonDoc["timezoneOffset"] = NTP_TIMEZONEOFFSET;
-   jsonDoc["unixtime"] = DomDomRTC.rtc.now().unixtime();
+   jsonDoc["unixtime"] = DomDomRTC.now().unixtime();
 
    serializeJson(jsonDoc, *response);
    
@@ -133,15 +133,15 @@ void DomDomWebServerClass::setRTCData(AsyncWebServerRequest * request, uint8_t *
         uint32_t unixtime = doc["unixtime"];
         Serial.printf("Recibido cambio de fecha a: %d\n", unixtime);
         DateTime dt(unixtime);
-        DomDomRTC.rtc.adjust(dt);
+        DomDomRTC.adjust(dt);
     }
     else{
         Serial.printf("Habilitado servicio NTP\n");
         DomDomRTC.setNTPEnabled(true);
-        DomDomRTC.timeClient->setTimeOffset(doc["timezoneOffset"]);
+        DomDomRTC.timeZone = doc["timezoneOffset"];
     }
     
-    Serial.printf("Nueva fecha %s\n",DomDomRTC.rtc.now().timestamp().c_str());
+    Serial.printf("Nueva fecha %s\n",DomDomRTC.now().timestamp().c_str());
 
     AsyncResponseStream *response = request->beginResponseStream("application/json");
     response->addHeader("Access-Control-Allow-Origin", "*");
@@ -154,7 +154,7 @@ void DomDomWebServerClass::getWifiData(AsyncWebServerRequest *request)
         
     StaticJsonDocument<1024> jsonDoc;
     jsonDoc["mode"] = DomDomWifi.getMode() == WIFI_MODE_AP ? "AP" : "STA";
-    jsonDoc["sta_enabled"] = DomDomWifi.enabled;
+    jsonDoc["sta_enabled"] = DomDomWifi.sta_enabled;
     jsonDoc["rssi"] = DomDomWifi.RSSI();
     jsonDoc["current_channel"] = WiFi.channel();
     if (DomDomWifi.getMode() == WIFI_MODE_STA)
@@ -194,22 +194,15 @@ void DomDomWebServerClass::setWifiData(AsyncWebServerRequest * request, uint8_t 
 
     if (doc.containsKey("sta_enabled"))
     {
-        DomDomWifi.enabled = doc["sta_enabled"];
-        if (DomDomWifi.enabled)
+        DomDomWifi.sta_enabled = doc["sta_enabled"];
+        if (DomDomWifi.sta_enabled)
         {
             String recv_ssid = doc["ssid"];
-            DomDomWifi.ssid = recv_ssid;
+            DomDomWifi.saveSTASSID(recv_ssid);
             String recv_pwd = doc["pwd"];
-            DomDomWifi.pwd = recv_pwd;
-        }
-        else
-        {
-            DomDomWifi.ssid = "";
-            DomDomWifi.pwd = "";
+            DomDomWifi.saveSTAPass(recv_pwd);
         }
 
-        DomDomWifi.saveSTASSID();
-        DomDomWifi.saveSTAPass();
         DomDomWifi.saveStatus();
     }
     

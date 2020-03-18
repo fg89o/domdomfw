@@ -72,12 +72,17 @@
 #define CHANNEL_5_RESOLUTION    8
 
 //===========================================================================
-//============================ NTP SECTION ==================================
+//===================== RTC Y  NTP SECTION ==================================
 //===========================================================================
+
+#define RTC_BEGIN_ATTEMPS 3
+#define RTC_BEGIN_ATTEMPS_DELAY 200
 
 #define NTP_ENABLED 1
 #define NTP_SERVERNAME "pool.ntp.org"
 #define NTP_TIMEZONEOFFSET 3600
+#define NTP_DELAY_ON_FAILURE    10000
+#define NTP_DELAY_ON_SUCCESS    3600000
 
 //===========================================================================
 //============================ FAN SECTION ==================================

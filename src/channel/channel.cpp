@@ -143,7 +143,7 @@ void DomDomChannelClass::update()
         return;
     }
 
-    DateTime now = DomDomRTC.rtc.now();
+    DateTime now = DomDomRTC.now();
     Serial.printf("[Channel %d] %d:%d Comprobando programacion\n", _channel_num, now.hour(), now.minute());
 
     DateTime horaAnterior;
@@ -159,7 +159,7 @@ void DomDomChannelClass::update()
         return;
     }
 
-    Serial.printf("[Channel %d] programacion previa obtenida: %d:%d", _channel_num, puntoAnterior->hour, puntoAnterior->minute);
+    Serial.printf("[Channel %d] programacion previa obtenida: %d:%d\n", _channel_num, puntoAnterior->hour, puntoAnterior->minute);
 
     correct = DomDomScheduleMgt.getShedulePoint(horaSiguiente, puntoSiguiente, false);
     if (!correct)
@@ -168,14 +168,14 @@ void DomDomChannelClass::update()
         return;
     }
 
-    Serial.printf("[Channel %d] programacion posterior obtenida: %d:%d", _channel_num, puntoSiguiente->hour, puntoSiguiente->minute);
+    Serial.printf("[Channel %d] programacion posterior obtenida: %d:%d\n", _channel_num, puntoSiguiente->hour, puntoSiguiente->minute);
 
     if(!puntoSiguiente->fade)
     {
-        Serial.printf("[Channel %d] Programacion no lineal", _channel_num);
+        Serial.printf("[Channel %d] Programacion no lineal\n", _channel_num);
         calcPWMNoLineal(puntoAnterior, puntoSiguiente, horaAnterior, horaSiguiente);
     }else{
-        Serial.printf("[Channel %d] Programacion lineal", _channel_num);
+        Serial.printf("[Channel %d] Programacion lineal\n", _channel_num);
         calcPWMLineal(puntoAnterior, puntoSiguiente, horaAnterior, horaSiguiente);
     }
     
@@ -184,10 +184,10 @@ void DomDomChannelClass::update()
 void DomDomChannelClass::calcPWMLineal(DomDomSchedulePoint *puntoAnterior, DomDomSchedulePoint *puntoSiguiente, DateTime &horaAnterior, DateTime &horaSiguiente)
 {
 
-    int diffTotSeconds = (horaSiguiente - horaAnterior).totalseconds();
+    int minutes_total = (horaSiguiente - horaAnterior).totalseconds() / 60;
 
     // Si la hora es la misma ajustamos directamente el valor.
-    if (diffTotSeconds == 0)
+    if (minutes_total == 0)
     {
         Serial.println("WARN: Misma hora de inicio y de final. ¿Error en programacion?");
         int new_pwm = 0;
@@ -201,17 +201,23 @@ void DomDomChannelClass::calcPWMLineal(DomDomSchedulePoint *puntoAnterior, DomDo
     }
     else
     {
-        int seconds = (DomDomRTC.rtc.now() - horaAnterior).totalseconds();
-        float secPorcentaje = (seconds * 100) / diffTotSeconds;
+        DateTime now = DomDomRTC.now();
+        DateTime now_noseconds (now.year(),now.month(),now.day(),now.hour(), now.minute(), 0);
 
-        int diffValue = (puntoSiguiente->value[_channel_num] - puntoAnterior->value[_channel_num]) * (secPorcentaje/100);
-        double valor = (max_limit_pwm - min_limit_pwm) * ((puntoAnterior->value[_channel_num] + diffValue) / 100);
+        int minutes = (now_noseconds - horaAnterior).totalseconds() / 60;
+        Serial.printf("Minutos totales: %d | Minutos transcurridos: %d\n", minutes_total, minutes);
 
-        int new_pwm = 0;
-        new_pwm = min_limit_pwm + valor;
+        double minutes_porcentaje = (minutes * 100) / minutes_total / double(100);
+        Serial.printf("Porcentaje de tiempo: %f\n", minutes_porcentaje);
+
+        int porcentaje_valor = (puntoSiguiente->value[_channel_num] - puntoAnterior->value[_channel_num]) * minutes_porcentaje;
+        Serial.printf("Punto anterior: %d | Punto siguiente: %d | Porcentaje a aplicar: %d\n", puntoAnterior->value[_channel_num], puntoSiguiente->value[_channel_num] , porcentaje_valor);
+
+        int new_pwm = min_limit_pwm + (max_limit_pwm - min_limit_pwm) * ((puntoAnterior->value[_channel_num] + porcentaje_valor) / double(100));
+        Serial.printf("PWM: %d\n", new_pwm);
         if (new_pwm != _current_pwm)
         {
-            Serial.printf("[Channel %d] Cambiando PWM a %d (%d)\n", _channel_num, puntoAnterior->value[_channel_num] + diffValue, new_pwm);
+            Serial.printf("[Channel %d] Cambiando PWM a %d (%d)\n", _channel_num, puntoAnterior->value[_channel_num] + porcentaje_valor, new_pwm);
             setPWMValue(new_pwm);
         }
     }   

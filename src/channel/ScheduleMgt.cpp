@@ -34,7 +34,7 @@ DomDomScheduleMgtClass::~DomDomScheduleMgtClass()
 
 bool DomDomScheduleMgtClass::getShedulePoint(DateTime &dt, DomDomSchedulePoint *&point, bool previous)
 {
-    DateTime now = DomDomRTC.rtc.now();
+    DateTime now = DomDomRTC.now();
     now = now - TimeSpan(now.second());
 
     DateTime ultimaHora;
@@ -224,10 +224,11 @@ bool DomDomScheduleMgtClass::end()
 
 void DomDomScheduleMgtClass::tInit(void *parameter)
 {
+    int offset = 5;
     while(true)
     {
         DomDomChannelMgt.update();
-        const int next_ms = (61 - DomDomRTC.rtc.now().second()) * 1000;
+        const int next_ms = (60 - DomDomRTC.now().second() + offset) * 1000;
         vTaskDelay(next_ms / portTICK_PERIOD_MS);
     }
 }

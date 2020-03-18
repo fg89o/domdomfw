@@ -28,27 +28,88 @@
 #include "../lib/NTPClient/NTPClient.h"
 #include <WiFiUdp.h>
 
-#define RTC_BEGIN_ATTEMPS 3
-#define RTC_BEGIN_ATTEMPS_DELAY 200
-
+/**
+ * Clase encargada de la gestion de la hora.
+ * 
+ * Al iniciar esta clase se cogera la fecha/hora
+ * del modulo externo y se ajustará el RTC interno.
+ * En caso de estar habilitado el servicio NTP lo
+ * configura y activa. 
+ */
 class DomDomRTCClass
 {
     private:
+        /**
+         * Clase UDP para el servicio NTP.
+         */
         WiFiUDP _ntpUDP;
+        /**
+         * Cliente NTP para la actualizacion de la hora por internet
+         */
+        NTPClient *timeClient;
+        /**
+         * Indica si el servicio NTP esta activo o no.
+         */
         bool _ntpStarted = false;
+        /**
+         * Puntero a la tarea del NTP
+         */
         TaskHandle_t *_ntp_task;
-        static void NTPUpdate(void * parameter);
+        /**
+         * Actualiza la hora por NTP.
+         */
+        static void NTPTask(void * parameter);
+        /**
+         * Clase para acceder a las funciones del modulo
+         * de fecha/hora externo.
+         */
+        RTC_DS3231 rtc;
 
     public:
+        /**
+         * Constructor
+         */
         DomDomRTCClass();
-        NTPClient *timeClient;
-        RTC_DS3231 rtc;
+        /**
+         * Indica si la clase se inicio correctamente
+         */
         bool ready;
+        /**
+         * Segundos de la zona horaria a la que se pertenezca
+         * */
+        int timeZone;
+        /**
+         * Ajusta el RTC interno y externo con la nueva fecha y hora
+         */
+        void adjust(DateTime dt);
+        /**
+         * Devuelve la fecha y hora actual
+         */
+        DateTime now();
+        /**
+         * Inicia el proceso completo para la gestion de la hora
+         */
         bool begin();
+        /**
+         * Inicia el servicio NTP.
+         */
         void beginNTP();
+        /**
+         * Para el servicio NTP.
+         */
         void endNTP();
-        void update();
+        /**
+         * Realiza una peticion de fecha y hora al servidor NTP.
+         */
+        bool updateFromNTP();
+        /**
+         * Establece si el NTP esta habilitado o no.
+         * En caso de estar activo y deshabilitarlo el servicio se parara.
+         */
         void setNTPEnabled(bool enabled);
+        /**
+         * Indica si el NTP esta en ejecucion
+         */
         bool NTPStarted() const { return _ntpStarted; };
 };
 

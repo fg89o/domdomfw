@@ -22,33 +22,112 @@
 #define DOMDOM_WIFICLASS_h
 #include <Arduino.h>
 
+/**
+ * Clase encargada de la conexion Wifi, tanto STA como AP.
+ * 
+ * Al iniciar la conexion la clase intentara conectarse a la
+ * red wifi que tenga en memoria, en caso de no poder conectarse
+ * o de no tener ninguna en memoria creara su propia red para que 
+ * el equipo siempre sea accesible. Una vez establecida una conexion,
+ * en funcion de los parametros, el equipo activara el servicio mDNS,
+ * para que se pueda acceder mediante un nombre.
+ * 
+ */
 class DomDomWifiClass
 {
     private:
-        static bool createOwnAPWifi();
-        static int connectSTAWifi();
-        static bool initmDNS();
-        static void tInit(void * parameter);
-        TaskHandle_t *initTaskHandle;
-        
+        /**
+         * Intenta la configuracion AP.
+         */
+        bool createOwnAPWifi();
+        /**
+         * Intenta conectarse en modo STA.
+         */
+        int connectSTAWifi();
+        /**
+         * Inicia el proceso de conexion STA o AP.
+         */
+        void connect();
+        /**
+         * Indica si hay alguna red conectada STA o AP.
+         */
+        bool _connected;
+
     public:
+        /**
+         * Constructor
+         */
         DomDomWifiClass();
+        /**
+         * SSID de la red a la que nos conectaremos.
+         */
         String ssid;
+        /**
+         * Password de la red guardada en el ssid.
+         */
         String pwd;
-        bool enabled = true;
+        /**
+         * Indica si la conexion STA esta habilitada.
+         */
+        bool sta_enabled = true;
+        /**
+         * Indica si el servicio mDNS esta habilitado.
+         */
         bool mDNS_enabled;
+        /**
+         * Nombre de host para el servicio mDNS.
+         */
         String mDNS_hostname;
+        /**
+         * Inicia el proceso de conexion.
+         */
         bool begin();
+        /**
+         * Inicia el servicio mDNS.
+         */
+        bool beginmDNS();
+        /**
+         * Devuelve un booleano indicando si el equipo esta conectado,
+         * devuelve true tanto si la conexion es AP como STA.
+         */
         bool isConnected();
-        bool isConnecting;
+        /**
+         * Imprime la informacion de la conexion por el Serial.
+         */
         void printWifiInfo();
+        /**
+         * Devuelve un entero que corresponde con el modo configurado 
+         * en el equipo (AP, STA).
+         */
         int getMode();
+        /**
+         * Valor con la potencia de la señal Wifi a la que se+
+         * esta conectado. Solamente valido para conexiones STA.
+         */
         int8_t RSSI();
-        bool saveSTASSID();
+        /**
+         * Guarda el ssid en memoria.
+         */
+        bool saveSTASSID(String ssid);
+        /**
+         * Lee el ssid almacenado en memoria.
+         */
         String readSTASSID();
-        bool saveSTAPass();
+        /**
+         * Guarda el password en memoria.
+         */
+        bool saveSTAPass(String pwd);
+        /**
+         * Lee el password almacenado en memoria.
+         */
         String readSTAPass();
+        /**
+         * Guarda el estado habilitado o no en memoria.
+         */
         bool saveStatus();
+        /**
+         * Guarda las opciones del servicio mDNS en memoria.
+         */
         bool saveMDNSSettings();
 };
 

@@ -30,17 +30,47 @@
 class DomDomWebServerClass
 {
     private:
+        /**
+         * Instacia del servidor web
+         */
         AsyncWebServer *_server;
 
     public:
+        /**
+         * Constructor
+         */
         DomDomWebServerClass();
+        /**
+         * Inicia el servidor web.
+         */
         void begin();
+        /**
+         * Devuelve un JSON con la informacion RTC del equipo.
+         */
         static void getRTCData(AsyncWebServerRequest *request);
+        /**
+         * Acepta un JSON con la nueva informacion RTC.
+         */
         static void setRTCData(AsyncWebServerRequest * request, uint8_t *data, size_t len, size_t index, size_t total);
+        /**
+         * Devuelve un JSON con la informacion de red.
+         */
         static void getWifiData(AsyncWebServerRequest *request);
+        /**
+         * Acepta un JSON con la nueva configuracion de red.
+         */
         static void setWifiData(AsyncWebServerRequest * request, uint8_t *data, size_t len, size_t index, size_t total);
+        /**
+         * Devuelve un JSON con la informacion de los canales.
+         */
         static void getChannelsData(AsyncWebServerRequest *request);
+        /**
+         * Acepta un JSON con la nueva configuracion de los canales.
+         */
         static void setChannelsData(AsyncWebServerRequest * request, uint8_t *data, size_t len, size_t index, size_t total);
+        /**
+         * Acepta un JSON que con la estructura correcta provoca un reinicio en equipo.
+         */
         static void setRestart(AsyncWebServerRequest * request, uint8_t *data, size_t len, size_t index, size_t total);
 };
 

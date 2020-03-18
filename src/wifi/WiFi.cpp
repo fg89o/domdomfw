@@ -24,23 +24,20 @@
 #include <EEPROM.h>
 #include "configuration.h"
 
-// Constructor
-DomDomWifiClass::DomDomWifiClass(){};
+DomDomWifiClass::DomDomWifiClass()
+{
+    _connected = false;
+};
 
-// Inicia le proceso de conexcion WIFI.
-// Si hay un SSID al que conectarse lo intenta. 
-// En caso contrario o de error crea su propio AP para tener conexion.
-// Al final inicia el servicio mDNS.
 bool DomDomWifiClass::begin()
 {
     Serial.println("Iniciando WiFi");
-    DomDomWifi.isConnecting = true;
 
-    enabled = WIFI_STA_ENABLED;
+    sta_enabled = WIFI_STA_ENABLED;
     int value = EEPROM.read(EEPROM_STA_ENABLED_ADDRESS);
     if (value >= 0 && value <= 255)
     {
-        enabled = value > 0;
+        sta_enabled = value > 0;
     }
 
     ssid = DomDomWifi.readSTASSID();
@@ -55,60 +52,45 @@ bool DomDomWifiClass::begin()
     mDNS_enabled = EEPROM.read(EEPROM_MDNS_ENABLED_ADDRESS);
     mDNS_hostname = EEPROM.readString(EEPROM_MDNS_HOSTNAME_ADDRESS);
 
-    xTaskCreate(
-        this->tInit,            /* Task function. */
-        "WIFIInitTask",         /* String with name of task. */
-        10000,                  /* Stack size in bytes. */
-        NULL,                   /* Parameter passed as input of the task */
-        1,                      /* Priority of the task. */
-        initTaskHandle          /* Task handle. */
-    );
-    
-    while(DomDomWifi.isConnecting)
-    {
-        delay(100);
-    }
+    connect();
 
     return true;
 }
 
 // Inicia la tarea del proceso de conexion
-void DomDomWifiClass::tInit(void * parameter)
+void DomDomWifiClass::connect()
 {
-    DomDomWifi.isConnecting = true;
-    
-    bool connected = false;
-    if (DomDomWifi.enabled)
+    if (sta_enabled)
     {
         // Si tenemos red WIFI a la que conectarnos lo intentamos
-        if (DomDomWifi.ssid.length() > 0)
+        if (ssid.length() > 0)
         {
-            Serial.printf("Intentando conexion Wifi a %s\n", DomDomWifi.ssid.c_str());
+            Serial.printf("Intentando conexion Wifi a %s\n", ssid.c_str());
             for(int i = 0; i < WIFI_NUM_RETRIES; i++)
             {
                 connectSTAWifi();
-                int delay = 0;
-                while(WiFi.status() != WL_CONNECTED && delay < WIFI_CONNECTION_LATENCY)
+                int delay_ms = 0;
+                while(WiFi.status() != WL_CONNECTED && delay_ms < WIFI_CONNECTION_LATENCY)
                 {
                     Serial.print('_');
-                    delay += 500;
-                    vTaskDelay(500 / portTICK_PERIOD_MS);
+                    delay_ms += 500;
+                    delay(delay_ms);
                 }
                 
-                connected = WiFi.status() == WL_CONNECTED;
+                _connected = WiFi.status() == WL_CONNECTED;
 
-                if (!connected)
+                if (!_connected)
                 {
                     Serial.print('.');
-                    vTaskDelay(1000 / portTICK_PERIOD_MS);
+                    delay(1000);
                 }else{
                     Serial.print("\n");
-                    DomDomWifi.printWifiInfo();
+                    printWifiInfo();
                     break;
                 }
             }
 
-            if (!connected)
+            if (!_connected)
             {
                 Serial.println("Agotados intentos de conexion!");
             }
@@ -117,51 +99,46 @@ void DomDomWifiClass::tInit(void * parameter)
     }
     
     // Si no nos hemos conectado creamos el punto de acceso
-    if (!connected)
+    if (!_connected)
     {
         Serial.print("Creando AP");
         for(int i = 0; i < WIFI_NUM_RETRIES; i++)
         {
-            connected = createOwnAPWifi();
+            _connected = createOwnAPWifi();
 
-            if (connected)
+            if (_connected)
             {
                 Serial.print("\n");
-                DomDomWifi.printWifiInfo();
+                printWifiInfo();
                 break;
             }
             
             Serial.print('.');
-            vTaskDelay(2000 / portTICK_PERIOD_MS);
+            delay(2000);
         }
     }
 
-    if (!connected)
+    if (!_connected)
     {
         Serial.println("No se pudo crear el AP propio del dispositivo. Equipo sin conexion");
     }
 
-    if (connected && DomDomWifi.mDNS_enabled)
+    if (_connected && mDNS_enabled)
     {
         Serial.println("Configurando mDNS");
-        initmDNS();
+        beginmDNS();
     }
-
-    DomDomWifi.isConnecting = false;
-
-    vTaskDelete(NULL);
 }
 
-// Intenta conectarse a un SSID
 int DomDomWifiClass::connectSTAWifi()
 {
     WiFi.mode(WIFI_STA);
 
-    return WiFi.begin(DomDomWifi.ssid.c_str(), DomDomWifi.pwd.c_str());
+    return WiFi.begin(ssid.c_str(), pwd.c_str());
 }
 
-// Crea un AP propio con la conexion
-bool DomDomWifiClass::createOwnAPWifi(){
+bool DomDomWifiClass::createOwnAPWifi()
+{
     WiFi.mode(WIFI_AP);
 
     return WiFi.softAP(
@@ -173,28 +150,26 @@ bool DomDomWifiClass::createOwnAPWifi(){
     );
 }
 
-// Inicializa el servicio mDNS
-bool DomDomWifiClass::initmDNS()
+bool DomDomWifiClass::beginmDNS()
 {
 
-    DomDomWifi.mDNS_hostname = EEPROM.readString(EEPROM_MDNS_HOSTNAME_ADDRESS);
-    if (DomDomWifi.mDNS_hostname.length() <= 0)
+    mDNS_hostname = EEPROM.readString(EEPROM_MDNS_HOSTNAME_ADDRESS);
+    if (mDNS_hostname.length() <= 0)
     {
-        DomDomWifi.mDNS_hostname = MDNS_HOSTNAME;
+        mDNS_hostname = MDNS_HOSTNAME;
     }
 
-    if (!MDNS.begin(DomDomWifi.mDNS_hostname.c_str())) {
+    if (!MDNS.begin(mDNS_hostname.c_str())) {
         Serial.println("Error al configurar el servicio MDNS!");
         return false;
     }
 
-    Serial.printf("Configurado mDNS con hostname %s.local\n", DomDomWifi.mDNS_hostname.c_str());
+    Serial.printf("Configurado mDNS con hostname %s.local\n", mDNS_hostname.c_str());
     return true;
 }
 
-// Devuelve si se esta conectada a una red WiFi
 bool DomDomWifiClass::isConnected(){
-    return WiFi.isConnected();
+    return _connected;
 }
 
 int DomDomWifiClass::getMode()
@@ -207,7 +182,6 @@ int8_t DomDomWifiClass::RSSI()
     return WiFi.RSSI();
 }
 
-// Imprime los detalles de la red wifi a la que se esta conectado
 void DomDomWifiClass::printWifiInfo()
 {
     String modo;
@@ -252,16 +226,15 @@ void DomDomWifiClass::printWifiInfo()
     }
 }
 
-// Guarda el SSID para STA en la EEPROM
-bool DomDomWifiClass::saveSTASSID()
+bool DomDomWifiClass::saveSTASSID(String str)
 {
-    if (strlen(ssid.c_str()) > EEPROM_SSID_NAME_LENGTH)
+    if (strlen(str.c_str()) > EEPROM_SSID_NAME_LENGTH)
     {
         Serial.println("ERROR: SSID name too long!");
         return false;
     }
     
-    EEPROM.writeString(EEPROM_STA_SSID_NAME_ADDRESS, ssid);
+    EEPROM.writeString(EEPROM_STA_SSID_NAME_ADDRESS, str);
     bool result = EEPROM.commit();
     if (!result)
     {
@@ -270,22 +243,20 @@ bool DomDomWifiClass::saveSTASSID()
     return result;
 }
 
-// Recupera el SSID para STA de la EEPROM
 String DomDomWifiClass::readSTASSID()
 {
     return EEPROM.readString(EEPROM_STA_SSID_NAME_ADDRESS);
 }
 
-// Guarda el SSID para STA en la EEPROM
-bool DomDomWifiClass::saveSTAPass()
+bool DomDomWifiClass::saveSTAPass(String password)
 {
-    if (strlen(pwd.c_str()) > EEPROM_STA_PASSWORD_LENGTH)
+    if (strlen(password.c_str()) > EEPROM_STA_PASSWORD_LENGTH)
     {
         Serial.println("ERROR: Password too long!");
         return false;
     }
 
-    EEPROM.writeString(EEPROM_STA_PASSWORD_ADDRESS, pwd);
+    EEPROM.writeString(EEPROM_STA_PASSWORD_ADDRESS, password);
     bool result = EEPROM.commit();
     if (!result)
     {
@@ -294,7 +265,6 @@ bool DomDomWifiClass::saveSTAPass()
     return result;
 }
 
-// Recupera el SSID para STA de la EEPROM
 String DomDomWifiClass::readSTAPass()
 {
     return EEPROM.readString(EEPROM_STA_PASSWORD_ADDRESS);
@@ -302,7 +272,7 @@ String DomDomWifiClass::readSTAPass()
 
 bool DomDomWifiClass::saveStatus()
 {
-    EEPROM.write(EEPROM_STA_ENABLED_ADDRESS, enabled);
+    EEPROM.write(EEPROM_STA_ENABLED_ADDRESS, sta_enabled);
     return EEPROM.commit();
 }
 
