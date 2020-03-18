@@ -58,7 +58,7 @@ void initEEPROM()
     EEPROM.writeString(EEPROM_MDNS_HOSTNAME_ADDRESS, MDNS_HOSTNAME);
 
     EEPROM.writeBool(EEPROM_NTP_ENABLED_ADDRESS, NTP_ENABLED);
-    
+
     EEPROM.commit();
 
     DomDomChannelMgt.initEEPROM();
@@ -90,13 +90,13 @@ void setup()
   DomDomScheduleMgt.load();
 
   // Configuracion de programacion
-  DomDomSchedulePoint *point = new DomDomSchedulePoint(ALL, 23, 42);
+  DomDomSchedulePoint *point = new DomDomSchedulePoint(ALL, 13, 36);
   point->value[0] = 100;
   point->value[1] = 100;
   point->value[2] = 100;
   DomDomScheduleMgt.schedulePoints.push_back(point);
 
-  DomDomSchedulePoint *point2 = new DomDomSchedulePoint(ALL, 23, 44);
+  DomDomSchedulePoint *point2 = new DomDomSchedulePoint(ALL, 13, 38);
   point2->value[0] = 100;
   point2->value[1] = 0;
   point2->value[2] = 0;
@@ -123,4 +123,13 @@ void setup()
 
 void loop()
 {
+  
+  /************************************************
+   * 
+   *  EN ESTE PROYECTO EL LOOP() ESTARA VACIO 
+   *  YA QUE APROVECHAMOS LAS TASK PARA SACARLE
+   *  EL MAXIMO PARTIDO A LOS DOS CORES DEL ESP.
+   * 
+   * *********************************************/
+
 }

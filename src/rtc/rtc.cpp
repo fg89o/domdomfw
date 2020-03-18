@@ -158,7 +158,9 @@ DateTime DomDomRTCClass::now()
 
 void DomDomRTCClass::adjust(DateTime dt)
 {
-    timeval epoch = {dt.unixtime(), 0};
+    struct timeval epoch;
+    epoch.tv_sec = dt.unixtime();
+    epoch.tv_usec = 0;
 
     rtc.adjust(dt);
     settimeofday((const timeval*)&epoch, 0);

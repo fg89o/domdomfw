@@ -26,24 +26,83 @@
 #include "schedulePoint.h"
 #include "../rtc/rtc.h"
 
+/**
+ * Clase encargada de la programacion.
+ * 
+ * Una vez iniciada esta clase comprobara los
+ * puntos de programacion cargados e ira modificando
+ * los canales en funcion del valor que le corresponda.
+ */
 class DomDomScheduleMgtClass
 {
     private:
+        /**
+         * Indica si el proceso está activado.
+         */
         bool _started = false;
+        /**
+         * Puntero a la tarea del programador.
+         */
         TaskHandle_t *taskHandle;
-        static void tInit(void * parameter);
+        /**
+         * Tarea del programador.
+         */
+        static void scheduleTask(void * parameter);
+        /**
+         * Devuelve el valor proporcional entre @prevValue y @nextValue en base a @anterior y @siguiente.
+         */
+        int calcFadeValue(int prevValue, int nextValue, int min_value, int max_value, DateTime anterior, DateTime siguiente);
 
     public:
-        std::vector<DomDomSchedulePoint *> schedulePoints;
-        bool getShedulePoint(DateTime &dt, DomDomSchedulePoint *&point, bool previous);
-        bool save();
-        bool load();
-        bool begin();
-        bool end();
-        bool isStarted() const { return _started; };
-        void addSchedulePoint(DomDomDayOfWeek day, uint8_t hour, uint8_t minute, bool fade);
+        /**
+         * Constructor.
+         */
         DomDomScheduleMgtClass();
+        /**
+         * Destructor.
+         */
         ~DomDomScheduleMgtClass();
+        /**
+         * Puntos de programacion cargados.
+         */
+        std::vector<DomDomSchedulePoint *> schedulePoints;
+        /**
+         * Guarda los puntos de programacion cargados en la memoria.
+         */
+        bool save();
+        /**
+         * Borra los puntos de programacion actuales y 
+         * carga los valores guardados en memoria.
+         */
+        bool load();
+        /**
+         * Inicia el programador.
+         * */
+        bool begin();
+        /**
+         * Comprueba la programacion.
+         */
+        void update();
+        /**
+         * Para el programador.
+         */
+        bool end();
+        /**
+         * Indica si el programador esta en marcha o no.
+         */
+        bool isStarted() const { return _started; };
+        /**
+         * Añade un nuevo punto de programacion con los valores pasados por parametro.
+         */
+        void addSchedulePoint(DomDomDayOfWeek day, uint8_t hour, uint8_t minute, bool fade);
+        /**
+         * Devuelve un punto de programacion.
+         * 
+         * Si @previous es verdadero rellena @point con el punto anterior mas cercano al parametro @dt,
+         * Si @previous es falso rellena @point con el punto siguiente mas cercano al parametro @dt
+         * Devuelve un booleano indicando si se ha encontrado un punto de programacion o no.
+         */
+        bool getShedulePoint(DateTime &dt, DomDomSchedulePoint *&point, bool previous);
 };
 
 

@@ -185,7 +185,7 @@ void DomDomScheduleMgtClass::addSchedulePoint(DomDomDayOfWeek day, uint8_t hour,
 {
     if (schedulePoints.size() >= EEPROM_MAX_SCHEDULE_POINTS)
     {
-        Serial.println("ERROR: Numero maximo de programaciones alcanzado");
+        Serial.println("ERROR: Numero maximo de programaciones alcanzado!");
         return;
     }
 
@@ -199,7 +199,7 @@ bool DomDomScheduleMgtClass::begin()
         _started = true;
 
         xTaskCreate(
-            this->tInit,            /* Task function. */
+            this->scheduleTask,            /* Task function. */
             "ScheduleInitTask",     /* String with name of task. */
             10000,                  /* Stack size in bytes. */
             NULL,                   /* Parameter passed as input of the task */
@@ -215,22 +215,105 @@ bool DomDomScheduleMgtClass::end()
 {
     if (_started)
     {
-        vTaskDelete(taskHandle);
         _started = false;
+        vTaskDelete(taskHandle);
     }
 
     return true;
 }
 
-void DomDomScheduleMgtClass::tInit(void *parameter)
+void DomDomScheduleMgtClass::update()
+{
+    DateTime now = DomDomRTC.now();
+    Serial.printf("[Schedule] %d:%d Comprobando programacion\n", now.hour(), now.minute());
+
+    DateTime horaAnterior;
+    DateTime horaSiguiente;
+    DomDomSchedulePoint *puntoAnterior = nullptr;
+    DomDomSchedulePoint *puntoSiguiente = nullptr;
+
+    bool correct;
+    correct = getShedulePoint(horaAnterior, puntoAnterior, true);
+    if (!correct)
+    {
+        Serial.println("ERROR: No se encontra una programacion previa.");
+        return;
+    }
+
+    correct = getShedulePoint(horaSiguiente, puntoSiguiente, false);
+    if (!correct)
+    {
+        Serial.println("ERROR: No se encontra una programacion siguiente.");
+        return;
+    }
+
+    Serial.printf("[Schedule] intervalo obtenido: %d:%d - %d:%d\n", puntoAnterior->hour, puntoAnterior->minute, puntoSiguiente->hour, puntoSiguiente->minute);
+
+    for(int i = 0; i < DomDomChannelMgt.channels.size(); i++)
+    {
+        DomDomChannelClass *channel = DomDomChannelMgt.channels[i];
+        int channel_num = channel->getNum();
+        if (!puntoSiguiente->fade || puntoAnterior->value[channel_num] == puntoSiguiente->value[channel_num])
+        {
+            int pwm = 0;
+            double porcentaje = puntoSiguiente->value[channel_num] / 100;
+            pwm = channel->min_limit_pwm + ((channel->max_limit_pwm - channel->min_limit_pwm) * porcentaje);
+            channel->setPWMValue(pwm);
+        }
+        else
+        {
+            int pwm = calcFadeValue(puntoAnterior->value[channel_num], 
+                                    puntoSiguiente->value[channel_num],
+                                    channel->min_limit_pwm,
+                                    channel->max_limit_pwm,
+                                    horaAnterior,
+                                    horaSiguiente);
+            
+            channel->setPWMValue(pwm);
+        }
+    }
+}
+
+void DomDomScheduleMgtClass::scheduleTask(void *parameter)
 {
     int offset = 5;
     while(true)
     {
-        DomDomChannelMgt.update();
+        DomDomScheduleMgt.update();
         const int next_ms = (60 - DomDomRTC.now().second() + offset) * 1000;
         vTaskDelay(next_ms / portTICK_PERIOD_MS);
     }
+}
+
+int DomDomScheduleMgtClass::calcFadeValue(int prevValue, int nextValue, int min_value, int max_value, DateTime anterior, DateTime siguiente)
+{
+    int minutes_total = (siguiente - anterior).totalseconds() / 60;
+
+    // Si la hora es la misma ajustamos directamente el valor.
+    if (minutes_total == 0)
+    {
+        Serial.println("WARN: Misma hora de inicio y de final. ¿Error en programacion?");
+        int new_pwm = 0;
+        double porcentaje = nextValue / 100;
+        new_pwm = min_value + ((max_value - min_value) * porcentaje);
+        
+        return new_pwm;
+    }
+    else
+    {
+        DateTime now = DomDomRTC.now();
+        DateTime now_noseconds (now.year(),now.month(),now.day(),now.hour(), now.minute(), 0);
+
+        int minutes = (now_noseconds - anterior).totalseconds() / 60;
+        double minutes_porcentaje = (minutes * 100) / minutes_total / double(100);
+
+        int porcentaje_valor = (nextValue - prevValue) * minutes_porcentaje;
+        int new_pwm = min_value + (max_value - min_value) * ((prevValue + porcentaje_valor) / double(100));
+
+        return new_pwm;
+    }   
+
+    return 0;
 }
 
 #if !defined(NO_GLOBAL_INSTANCES)

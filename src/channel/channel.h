@@ -23,43 +23,131 @@
 #define DOMDOM_CHANNEL_h
 
 #include <Arduino.h>
-#include "ScheduleMgt.h"
-#include "../rtc/rtc.h"
 
-
+/**
+ * Representa un canal.
+ * 
+ * A traves de esta clase tendremos accesso a la configuracion
+ * del canal y los metodos para poder controlar
+ * su estado, configuracion, luminosidad, etc.
+ */
 class DomDomChannelClass
 {
     private:
+        /**
+         * Pin de salida al que esta conectado este canal.
+         */
         uint8_t _pwm_pin;
+        /**
+         * Valor actual del PWM en el pin de salida.
+         */
         uint16_t _current_pwm;
+        /**
+         * Numero del canal. Actual como id del canal.
+         */
         uint8_t _channel_num;
+        /**
+         * Resolucion del PWM.
+         */
         uint8_t _resolution;
+        /**
+         * Valor minimo para el PWM.
+         * 
+         * Este valor nunca deberia ser inferior a 0
+         * ni superior al valor maximo.
+         */
         uint16_t _min_pwm;
+        /**
+         * Valor maximo para el PWM.
+         * 
+         * Este valor nunca deberia ser superior a
+         * pow(2, resolucion) ni inferior al valor minimo.
+         */
         uint16_t _max_pwn;
+        /**
+         * Indica si el canal esta configurado y listo.
+         */
         bool _ready;
+        /**
+         * Indica si este canal esta habilitado para su uso.
+         * Si no esta habilitado el valor PWM sera 0.
+         */
         bool _enabled;
-        void calcPWMLineal(DomDomSchedulePoint *previous, DomDomSchedulePoint *next, DateTime &horaAnterior, DateTime &horaSiguiente);
-        void calcPWMNoLineal(DomDomSchedulePoint *previous, DomDomSchedulePoint *next, DateTime &horaAnterior, DateTime &horaSiguiente);
+        /**
+         * Guarda el valor PWM actual en memoria.
+         */
+        bool saveCurrentPWM();
 
     public:
-        DomDomChannelClass(char num, char pwm_pin, char resolution);
+        /**
+         * Constructor.
+         */
         DomDomChannelClass(char num);
+        /**
+         * Constructor con mas parametros.
+         */
+        DomDomChannelClass(char num, char pwm_pin, char resolution);
+        /**
+         * Valor maximo para el PWM configurado por el usuario.
+         */
         uint16_t max_limit_pwm;
+        /**
+         * Valor minimo para el PWM configurado por el usuario.
+         */
         uint16_t min_limit_pwm;
+        /**
+         * Devuelve el Pin de salida en solo lectura.
+         */
         uint8_t pwm_pin() const {return _pwm_pin; };
+        /**
+         * Devuelve el valor PWM actual en solo lectura.
+         */
         uint16_t current_pwm() const {return _current_pwm; }
+        /**
+         * Devuelve el numero del canal en solo lectura.
+         */
         uint8_t getNum() const { return _channel_num; }
+        /**
+         * Devuelve la resolucion del PWM en solo lectura.
+         */
         uint8_t getResolution() const { return _resolution; }
+        /**
+         * Devuelve si el canal est habilitado o no, valor de solo lectura.
+         */
         bool getEnabled() const {return _enabled; };
+        /**
+         * Configura el canal.
+         */
         bool begin();
+        /**
+         * Quita la configuracion del canal.
+         */
         bool end();
+        /**
+         * Establece un nuevo valor para el PWM.
+         */
         bool setPWMValue(uint16_t value);
+        /**
+         * Establece una nueva resolucion PWM.
+         */
         bool setPWMResolution(uint8_t value);
+        /**
+         * Establece el estado actual del canal.
+         */
         bool setEnabled(bool enabled);
-        void update();
+        /**
+         * Guarda la configuracion actual del canal en memoria.
+         */
         bool save();
+        /**
+         * Invalida la configuracion actual y carga la configuracion
+         * almacenada en memoria para este canal.
+         */
         bool loadFromEEPROM();
-        bool saveCurrentPWM();
+        /**
+         * Inicializa la memoria correspondiente a este canal
+         * Borra toda la cofiguracion guardada que existiese.
+         */
         void initEEPROM();
 };
 

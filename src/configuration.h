@@ -65,11 +65,11 @@
 #define CHANNEL_4_PWM_PIN       0
 #define CHANNEL_5_PWM_PIN       0
 
-#define CHANNEL_1_RESOLUTION    8
-#define CHANNEL_2_RESOLUTION    8
-#define CHANNEL_3_RESOLUTION    8
-#define CHANNEL_4_RESOLUTION    8
-#define CHANNEL_5_RESOLUTION    8
+#define CHANNEL_1_RESOLUTION    10
+#define CHANNEL_2_RESOLUTION    10
+#define CHANNEL_3_RESOLUTION    10
+#define CHANNEL_4_RESOLUTION    10
+#define CHANNEL_5_RESOLUTION    10
 
 //===========================================================================
 //===================== RTC Y  NTP SECTION ==================================

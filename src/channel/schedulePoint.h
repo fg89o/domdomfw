@@ -22,6 +22,9 @@
 #ifndef DOMDOM_SCHEDULEPOINT_h
 #define DOMDOM_SCHEDULEPOINT_h
 
+/**
+ * Enumerado para los dias de la semana
+ */
 enum DomDomDayOfWeek
 {
     DOMINGO = 1,
@@ -36,15 +39,45 @@ enum DomDomDayOfWeek
     ALL = 127,
 };
 
+/**
+ * Punto de programacion.
+ * 
+ * Esta clase representa un punto de programacion.
+ * Se configura una hora, un valor para cada canal y 
+ * un booleano que indica si el cambio es progresivo
+ * en el tiempo o no.
+ */
 class DomDomSchedulePoint
 {
     public:
+        /**
+         * Constructor por defecto para un punto vacio.
+         * */
         DomDomSchedulePoint();
+        /**
+         * Constructor para inicializar con ciertos valores.
+         */
         DomDomSchedulePoint(DomDomDayOfWeek dayOfWeek, char hour, char minute, bool fade = true);
+        /**
+         * Indica si el cambio es progresivo en el tiempo o no.
+         */
         bool fade = true;
+        /**
+         * Dia de la semana a la que afecta el punto de programacion.
+         * NO IMPLEMENTADO!!!!
+         */
         DomDomDayOfWeek dayOfWeek;
+        /**
+         * Hora del punto de programacion.
+         */
         char hour;
+        /**
+         * Minuto del punto de programacion.
+         */
         char minute;
+        /**
+         * Array con los valores para cada canal.
+         */
         char value[5] = {0,0,0,0,0};
 };
 

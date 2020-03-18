@@ -25,16 +25,40 @@
 #include <Arduino.h>
 #include "channel.h"
 
+/**
+ * Clase que contiene los canales disponibles
+ */
 class DomDomChannelMgtClass
 {
     public:
+        /**
+         * Constructor
+         */
         DomDomChannelMgtClass();
+        /**
+         * Array con todos los canales disponibles.
+         */
         std::vector<DomDomChannelClass *> channels;
+        /**
+         * Inicia todos los canales.
+         */
         void begin();
+        /**
+         * Para todos los canales.
+         */
         void end();
-        void update();
+        /**
+         * Guarda la configuracion de todos los canales en memoria.
+         */
         void saveAll();
+        /**
+         * Invalida la configuracion actual y carga los valores
+         * guardados en memoria de todos los canales.
+         */
         void loadAll();
+        /**
+         * Inicializa la memoria para todos los canales.
+         */
         void initEEPROM();
 };
 

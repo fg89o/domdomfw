@@ -22,7 +22,6 @@
 #include <EEPROM.h>
 #include "configuration.h"
 
-// Constructor
 DomDomChannelClass::DomDomChannelClass(char num)
 {
     _ready = false;
@@ -30,7 +29,6 @@ DomDomChannelClass::DomDomChannelClass(char num)
     _enabled = true;
 }
 
-// Constructor
 DomDomChannelClass::DomDomChannelClass(char num, char pwm_pin, char resolution)
 {
     _ready = false;
@@ -46,7 +44,6 @@ DomDomChannelClass::DomDomChannelClass(char num, char pwm_pin, char resolution)
     pinMode(_pwm_pin, OUTPUT);
 }
 
-// Incia el control del canal
 bool DomDomChannelClass::begin()
 {
     if (_pwm_pin == 0 || !_enabled)
@@ -90,7 +87,6 @@ bool DomDomChannelClass::setEnabled(bool enabled)
     return true;
 }
 
-// Cambia el valor PWM del canal
 bool DomDomChannelClass::setPWMValue(uint16_t value)
 {
     if (!_ready)
@@ -114,10 +110,11 @@ bool DomDomChannelClass::setPWMValue(uint16_t value)
 
     _current_pwm = value;
 
+    Serial.printf("[Channel %d] PWM: %d\n", _channel_num, _current_pwm);
+    
     return true;
 }
 
-// Establece la resolucion del PWM
 bool DomDomChannelClass::setPWMResolution(uint8_t value)
 {
     if (value != 8 && value != 10 && value != 12 && value != 15)
@@ -131,108 +128,6 @@ bool DomDomChannelClass::setPWMResolution(uint8_t value)
     _max_pwn = (int)pow(2,value);
 
     return true;
-}
-
-// Actualiza el valor de los PWM en funcion de los puntos programados
-void DomDomChannelClass::update()
-{
-
-    if (!_ready)
-    {
-        Serial.printf("[Channel %d] WARN: Channel %d not ready. Use begin().\n", _channel_num, _channel_num);
-        return;
-    }
-
-    DateTime now = DomDomRTC.now();
-    Serial.printf("[Channel %d] %d:%d Comprobando programacion\n", _channel_num, now.hour(), now.minute());
-
-    DateTime horaAnterior;
-    DateTime horaSiguiente;
-    DomDomSchedulePoint *puntoAnterior = nullptr;
-    DomDomSchedulePoint *puntoSiguiente = nullptr;
-
-    bool correct;
-    correct = DomDomScheduleMgt.getShedulePoint(horaAnterior, puntoAnterior, true);
-    if (!correct)
-    {
-        Serial.println("ERROR: No se encontra una programacion previa.");
-        return;
-    }
-
-    Serial.printf("[Channel %d] programacion previa obtenida: %d:%d\n", _channel_num, puntoAnterior->hour, puntoAnterior->minute);
-
-    correct = DomDomScheduleMgt.getShedulePoint(horaSiguiente, puntoSiguiente, false);
-    if (!correct)
-    {
-        Serial.println("ERROR: No se encontra una programacion siguiente.");
-        return;
-    }
-
-    Serial.printf("[Channel %d] programacion posterior obtenida: %d:%d\n", _channel_num, puntoSiguiente->hour, puntoSiguiente->minute);
-
-    if(!puntoSiguiente->fade)
-    {
-        Serial.printf("[Channel %d] Programacion no lineal\n", _channel_num);
-        calcPWMNoLineal(puntoAnterior, puntoSiguiente, horaAnterior, horaSiguiente);
-    }else{
-        Serial.printf("[Channel %d] Programacion lineal\n", _channel_num);
-        calcPWMLineal(puntoAnterior, puntoSiguiente, horaAnterior, horaSiguiente);
-    }
-    
-}
-
-void DomDomChannelClass::calcPWMLineal(DomDomSchedulePoint *puntoAnterior, DomDomSchedulePoint *puntoSiguiente, DateTime &horaAnterior, DateTime &horaSiguiente)
-{
-
-    int minutes_total = (horaSiguiente - horaAnterior).totalseconds() / 60;
-
-    // Si la hora es la misma ajustamos directamente el valor.
-    if (minutes_total == 0)
-    {
-        Serial.println("WARN: Misma hora de inicio y de final. ¿Error en programacion?");
-        int new_pwm = 0;
-        double porcentaje = puntoSiguiente->value[_channel_num] / 100;
-        new_pwm = min_limit_pwm + ((max_limit_pwm - min_limit_pwm) * porcentaje);
-        if (new_pwm != _current_pwm)
-        {
-            Serial.printf("[Channel %d] Cambiando PWM a %d (%d)\n", _channel_num, puntoSiguiente->value[_channel_num], new_pwm);
-            setPWMValue(new_pwm);
-        }
-    }
-    else
-    {
-        DateTime now = DomDomRTC.now();
-        DateTime now_noseconds (now.year(),now.month(),now.day(),now.hour(), now.minute(), 0);
-
-        int minutes = (now_noseconds - horaAnterior).totalseconds() / 60;
-        Serial.printf("Minutos totales: %d | Minutos transcurridos: %d\n", minutes_total, minutes);
-
-        double minutes_porcentaje = (minutes * 100) / minutes_total / double(100);
-        Serial.printf("Porcentaje de tiempo: %f\n", minutes_porcentaje);
-
-        int porcentaje_valor = (puntoSiguiente->value[_channel_num] - puntoAnterior->value[_channel_num]) * minutes_porcentaje;
-        Serial.printf("Punto anterior: %d | Punto siguiente: %d | Porcentaje a aplicar: %d\n", puntoAnterior->value[_channel_num], puntoSiguiente->value[_channel_num] , porcentaje_valor);
-
-        int new_pwm = min_limit_pwm + (max_limit_pwm - min_limit_pwm) * ((puntoAnterior->value[_channel_num] + porcentaje_valor) / double(100));
-        Serial.printf("PWM: %d\n", new_pwm);
-        if (new_pwm != _current_pwm)
-        {
-            Serial.printf("[Channel %d] Cambiando PWM a %d (%d)\n", _channel_num, puntoAnterior->value[_channel_num] + porcentaje_valor, new_pwm);
-            setPWMValue(new_pwm);
-        }
-    }   
-}
-
-void DomDomChannelClass::calcPWMNoLineal(DomDomSchedulePoint *puntoAnterior, DomDomSchedulePoint *puntoSiguiente, DateTime &horaAnterior, DateTime &horaSiguiente)
-{
-    int new_pwm = 0;
-    double porcentaje = puntoAnterior->value[_channel_num] / 100;
-    new_pwm = min_limit_pwm + ((max_limit_pwm - min_limit_pwm) * porcentaje);
-    if (new_pwm != _current_pwm)
-    {
-        Serial.printf("[Channel %d] Cambiando PWM a %d (%d)\n", _channel_num, puntoAnterior->value[_channel_num], new_pwm);
-        setPWMValue(new_pwm);
-    }
 }
 
 bool DomDomChannelClass::saveCurrentPWM()
