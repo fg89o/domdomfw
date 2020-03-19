@@ -100,9 +100,17 @@
 //============================ FAN SECTION ==================================
 //===========================================================================
 
-#define FAN_TEMPERATURE_SENSOR_INPUT 1
-#define FAN_PWM_PIN 5
-#define FAN_PWM_FEEDBACK_PIN 4
+#define FAN_TEMPERATURE_SENSOR_INPUT    1
+#define FAN_PWM_PIN                     5
+#define FAN_PWM_FEEDBACK_PIN            34
+#define FAN_PWM_RESOLUTION              10
+#define FAN_PWM_CHANNEL                 11
+#define FAN_MIN_TEMP                    30
+#define FAN_MAX_TEMP                    40
+#define FAN_HISTERESIS                  2
+#define FAN_FEEDBACK_R1                 6800.0f
+#define FAN_FEEDBACK_R2                 4700.0f
+#define FAN_FEEDBACK_OFFSET             0.31f
 
 //===========================================================================
 //============================ EEPROM SECTION ===============================

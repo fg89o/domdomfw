@@ -72,9 +72,9 @@ void DomDomStatusLedControlClass::blink( int times)
     xSemaphoreTake( xMutex, portMAX_DELAY );
     for (int i = 0; i < times; i++)
     {
-        ledcWrite(LED_STATUS_CHANNEL, min_pwm);
+        off();
         delay(LED_STATUS_BLINK_DELAY);
-        ledcWrite(LED_STATUS_CHANNEL, max_pwm);
+        on();
         delay(LED_STATUS_BLINK_DELAY);
     }
     xSemaphoreGive( xMutex );
@@ -92,16 +92,36 @@ void DomDomStatusLedControlClass::blinkError( int times)
     
     for (int i = 0; i < times; i++)
     {
-        ledcWrite(LED_STATUS_CHANNEL, min_pwm);
+        off();
         delay(LED_STATUS_BLINK_DELAY);
-        ledcWrite(LED_STATUS_CHANNEL, max_pwm);
+        on();
         delay(LED_STATUS_BLINK_DELAY);
     }
 
     wifi_mode = -1;
     setWifiMode(current_mode);
-    
+
     xSemaphoreGive( xMutex );
+}
+
+void DomDomStatusLedControlClass::block()
+{
+    xSemaphoreTake( xMutex, portMAX_DELAY );
+}
+
+void DomDomStatusLedControlClass::release()
+{
+    xSemaphoreGive( xMutex );
+}
+
+void DomDomStatusLedControlClass::on()
+{
+    ledcWrite(LED_STATUS_CHANNEL, max_pwm);
+}
+
+void DomDomStatusLedControlClass::off()
+{
+    ledcWrite(LED_STATUS_CHANNEL, min_pwm);
 }
 
 #if !defined(NO_GLOBAL_INSTANCES)

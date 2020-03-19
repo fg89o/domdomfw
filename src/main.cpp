@@ -28,6 +28,7 @@
 #include "channel/channelMgt.h"
 #include "webServer/webServer.h"
 #include "statusLedControl/statusLedControl.h"
+#include "fan/fanControl.h"
 
 void initEEPROM()
 {
@@ -80,7 +81,7 @@ void setup()
 
   // Inicializamos el control del led de estado
   DomDomStatusLedControl.begin();
-  
+
   // Inicializa el wifi
   DomDomWifi.begin();
 
@@ -123,7 +124,13 @@ void setup()
 
   // Servidor web
   DomDomWebServer.begin();
+
+  // Iniciamos el control de la programacion
   DomDomScheduleMgt.begin();
+
+  // Control del ventilador
+  DomDomFanControl.begin();
+
 }
 
 void loop()

@@ -52,7 +52,7 @@ class DomDomStatusLedControlClass
 
     public:
         /**
-         * Constructor por defecto para un punto vacio.
+         * Constructor.
          * */
         DomDomStatusLedControlClass();
         /**
@@ -73,6 +73,22 @@ class DomDomStatusLedControlClass
          * Realiza un parpadeo con el led rojo.
          */
         void blinkError(int times);
+        /**
+         * Toma el control del led
+         */
+        void block();
+        /**
+         * Libera el led
+         */
+        void release();
+        /**
+         * Enciende el led
+         */
+        void on();
+        /**
+         * Apaga el led
+         */
+        void off();
 };
 
 

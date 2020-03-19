@@ -68,10 +68,7 @@ void DomDomWebServerClass::begin()
     _server->on("/reset", HTTP_POST, [](AsyncWebServerRequest * request){}, NULL, setRestart);
 
     _server->onNotFound([](AsyncWebServerRequest *request) {
-        Serial.print("[Web server] Not found\n");
-        AsyncWebServerResponse *response = request->beginResponse(400, "text/plain", "Not found");
-        response->addHeader("Access-Control-Allow-Origin","*");
-        request->send(response);
+        request->send(SPIFFS, "/index.html");
     });
     
     _server->begin();
