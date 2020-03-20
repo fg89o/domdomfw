@@ -57,10 +57,11 @@ bool DomDomChannelClass::begin()
     // attach the channel to be controlled
     ledcAttachPin(_pwm_pin, _channel_num);
 
+    _ready = true;
+
     // init PWM
     ledcWrite(_channel_num, _current_pwm); 
 
-    _ready = true;
     return true;
 }
 
@@ -89,7 +90,7 @@ bool DomDomChannelClass::setEnabled(bool enabled)
 
 bool DomDomChannelClass::setPWMValue(uint16_t value)
 {
-    if (!_ready)
+    if (!_ready || (!_enabled && value != 0))
     {
         return false;
     }
@@ -180,7 +181,7 @@ bool DomDomChannelClass::loadFromEEPROM()
         min_limit_pwm = EEPROM.readUShort(address);
         address += 2;
         uint16_t pwm = EEPROM.readUShort(address);
-        setPWMValue(pwm);
+        _current_pwm = pwm;
         
         Serial.printf("[CHANNEL %d] Configuracion cargada correctamente.\n", _channel_num);
         

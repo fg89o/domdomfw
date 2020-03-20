@@ -129,6 +129,8 @@ bool DomDomScheduleMgtClass::save()
         };
     }
     
+    EEPROM.writeBool(EEPROM_SCHEDULE_STATUS_ADDRESS, _started);
+
     bool result = EEPROM.commit();
 
     if (result)
@@ -178,6 +180,11 @@ bool DomDomScheduleMgtClass::load()
         Serial.print("No hay puntos de programacion guardados\n");
     }
     
+    if (EEPROM.readBool(EEPROM_SCHEDULE_STATUS_ADDRESS))
+    {
+        begin();
+    }
+
     return true;
 
 }
@@ -217,7 +224,6 @@ bool DomDomScheduleMgtClass::end()
     if (_started)
     {
         _started = false;
-        vTaskDelete(taskHandle);
     }
 
     return true;
@@ -280,12 +286,14 @@ void DomDomScheduleMgtClass::update()
 void DomDomScheduleMgtClass::scheduleTask(void *parameter)
 {
     int offset = 5;
-    while(true)
+    while(DomDomScheduleMgt.isStarted())
     {
         DomDomScheduleMgt.update();
         const int next_ms = (60 - DomDomRTC.now().second() + offset) * 1000;
         vTaskDelay(next_ms / portTICK_PERIOD_MS);
     }
+
+    vTaskDelete(NULL);
 }
 
 int DomDomScheduleMgtClass::calcFadeValue(int prevValue, int nextValue, int min_value, int max_value, DateTime anterior, DateTime siguiente)

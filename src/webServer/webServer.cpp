@@ -28,6 +28,7 @@
 #include "wifi/WiFi.h"
 #include "channel/channelMgt.h"
 #include "statusLedControl/statusLedControl.h"
+#include "channel/ScheduleMgt.h"
 
 String GetBodyContent(uint8_t *data, size_t len)
 {
@@ -66,6 +67,10 @@ void DomDomWebServerClass::begin()
 
     // AJAX para el reset
     _server->on("/reset", HTTP_POST, [](AsyncWebServerRequest * request){}, NULL, setRestart);
+
+    // AJAX para el ajuste de los canales
+    _server->on("/adjCanal", HTTP_GET, getChannelsAdj);
+    _server->on("/adjCanal", HTTP_POST, [](AsyncWebServerRequest * request){}, NULL, setChannelsAdj);
 
     _server->onNotFound([](AsyncWebServerRequest *request) {
         request->send(SPIFFS, "/index.html");
@@ -308,6 +313,78 @@ void DomDomWebServerClass::setRestart(AsyncWebServerRequest * request, uint8_t *
 
     request->send(400);
 }
+
+void DomDomWebServerClass::getChannelsAdj(AsyncWebServerRequest *request)
+{
+    AsyncResponseStream *response = request->beginResponseStream("application/json");
+        
+    StaticJsonDocument<1024> jsonDoc;
+    
+    jsonDoc["modo_programado"] = DomDomScheduleMgt.isStarted();
+    JsonArray ports = jsonDoc.createNestedArray("canales");
+
+    for (int i = 0; i < DomDomChannelMgt.channels.size(); i++)
+    {
+        JsonObject obj = ports.createNestedObject();
+        obj["enabled"] = DomDomChannelMgt.channels[i]->getEnabled();
+        obj["channel_num"] = DomDomChannelMgt.channels[i]->getNum();
+        obj["resolution"] = DomDomChannelMgt.channels[i]->getResolution();
+        obj["min_pwm"] = DomDomChannelMgt.channels[i]->min_limit_pwm;
+        obj["max_pwm"] = DomDomChannelMgt.channels[i]->max_limit_pwm;
+        obj["current_pwm"] = DomDomChannelMgt.channels[i]->current_pwm();
+    }
+
+    serializeJson(jsonDoc, *response);
+    
+    response->addHeader("Access-Control-Allow-Origin", "*");
+    request->send(response);
+}
+
+void DomDomWebServerClass::setChannelsAdj(AsyncWebServerRequest * request, uint8_t *data, size_t len, size_t index, size_t total)
+{
+    String bodyContent = GetBodyContent(data, len);
+    
+    DynamicJsonDocument doc(2048);;
+    DeserializationError err = deserializeJson(doc, bodyContent);
+
+    if (err) { 
+        request->send(400); 
+        return;
+    }
+
+    if (doc.containsKey("modo_programado"))
+    {
+        if (doc["modo_programado"])
+        {
+            Serial.printf("[Schedule] Programacion iniciada.\n");
+            DomDomScheduleMgt.begin();
+        }
+        else
+        {
+            Serial.printf("[Schedule] Programacion parada.\n");
+            DomDomScheduleMgt.end();
+        }
+        DomDomScheduleMgt.save();
+    }
+    
+    if (!DomDomScheduleMgt.isStarted() && doc.containsKey("canales"))
+    {
+        Serial.printf("[MANUAL] Comprobando canales recibidos...\n");
+        DomDomStatusLedControl.blink(1);
+        JsonArray canales = doc["canales"].as<JsonArray>();
+        for(JsonObject canal : canales)
+        {
+            DomDomChannelClass *channel = DomDomChannelMgt.channels[canal["channel_num"]];
+            channel->setPWMValue(canal["current_pwm"]);
+            channel->save();
+        }
+    }
+
+    AsyncResponseStream *response = request->beginResponseStream("application/json");
+    response->addHeader("Access-Control-Allow-Origin", "*");
+    request->send(response);
+}
+
 
 #if !defined(NO_GLOBAL_INSTANCES)
 DomDomWebServerClass DomDomWebServer;

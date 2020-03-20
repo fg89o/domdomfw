@@ -23,7 +23,8 @@
 
 DomDomFanControlClass::DomDomFanControlClass()
 {
-    xMutex = xSemaphoreCreateMutex();
+    volt_xMutex = xSemaphoreCreateMutex();
+    temp_xMutex = xSemaphoreCreateMutex();
 
     pinMode(FAN_PWM_PIN, OUTPUT);
     pinMode(FAN_PWM_FEEDBACK_PIN, INPUT);
@@ -35,6 +36,10 @@ DomDomFanControlClass::DomDomFanControlClass()
     _histeresis = FAN_HISTERESIS;
     min_temp = FAN_MIN_TEMP;
     max_temp = FAN_MAX_TEMP;
+
+    oneWire = OneWire(FAN_TEMP_SENSOR_PIN);
+    sensors = new DallasTemperature(&oneWire);
+    sensors->begin();
 
     // configure LED PWM functionalitites
     ledcSetup(FAN_PWM_CHANNEL, 5000, FAN_PWM_RESOLUTION);
@@ -115,17 +120,19 @@ void DomDomFanControlClass::update()
     ledcWrite(FAN_PWM_CHANNEL, new_pwm);
 }
 
-int DomDomFanControlClass::getTemperature()
+float DomDomFanControlClass::getTemperature()
 {
-    // Aqui va el codigo para leer de la sonda
-    // de momento devolvemos un valor fijo.
+    // xSemaphoreTake(temp_xMutex, portMAX_DELAY);
+    // sensors -> requestTemperatures(); 
+    // float temp = sensors->getTempCByIndex(0);
+    // xSemaphoreGive(temp_xMutex);
 
-    return 25;
+    return 25; /** Devolvemos un valor fijo hasta que tengamos la sonda instalada */
 }
 
 float DomDomFanControlClass::getVoltaje()
 {
-    xSemaphoreTake(xMutex, portMAX_DELAY);
+    xSemaphoreTake(volt_xMutex, portMAX_DELAY);
 
     int samples_num = 10;
 
@@ -142,7 +149,7 @@ float DomDomFanControlClass::getVoltaje()
         delay(5);
     }
 
-    xSemaphoreGive(xMutex);
+    xSemaphoreGive(volt_xMutex);
 
     value = value / samples_num;
     value = uPvolts * value / ADBits / r2 * (r1+r2) + offset;

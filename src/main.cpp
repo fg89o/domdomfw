@@ -33,7 +33,7 @@
 void initEEPROM()
 {
   
-  Serial.println("Inicializando EEPROM");
+  Serial.println("Iniciando EEPROM");
   bool init = false;
   int err_count = 0;
   while(err_count<EEPROM_INIT_RETRIES && !init)
@@ -50,7 +50,7 @@ void initEEPROM()
   // Primer uso
   if (EEPROM.read(1) != 1)
   {
-    Serial.print("Poniendo EEPROM a 0\n");
+    Serial.print("Detectado primer uso, inicializando EEPROM\n");
     EEPROM.write(1,1);
 
     EEPROM.writeString(EEPROM_STA_SSID_NAME_ADDRESS, "");
@@ -60,6 +60,8 @@ void initEEPROM()
     EEPROM.writeString(EEPROM_MDNS_HOSTNAME_ADDRESS, MDNS_HOSTNAME);
 
     EEPROM.writeBool(EEPROM_NTP_ENABLED_ADDRESS, NTP_ENABLED);
+
+    EEPROM.writeBool(EEPROM_SCHEDULE_STATUS_ADDRESS, true);
 
     EEPROM.commit();
 
@@ -96,37 +98,36 @@ void setup()
   DomDomScheduleMgt.load();
 
   // Configuracion de programacion
-  DomDomSchedulePoint *point = new DomDomSchedulePoint(ALL, 13, 36);
-  point->value[0] = 100;
-  point->value[1] = 100;
-  point->value[2] = 100;
-  DomDomScheduleMgt.schedulePoints.push_back(point);
+  if (DomDomScheduleMgt.schedulePoints.size() == 0)
+  {
+    DomDomSchedulePoint *point = new DomDomSchedulePoint(ALL, 13, 36);
+    point->value[0] = 100;
+    point->value[1] = 100;
+    point->value[2] = 100;
+    DomDomScheduleMgt.schedulePoints.push_back(point);
 
-  DomDomSchedulePoint *point2 = new DomDomSchedulePoint(ALL, 13, 38);
-  point2->value[0] = 100;
-  point2->value[1] = 0;
-  point2->value[2] = 0;
-  DomDomScheduleMgt.schedulePoints.push_back(point2);
+    DomDomSchedulePoint *point2 = new DomDomSchedulePoint(ALL, 13, 38);
+    point2->value[0] = 100;
+    point2->value[1] = 0;
+    point2->value[2] = 0;
+    DomDomScheduleMgt.schedulePoints.push_back(point2);
 
-  DomDomSchedulePoint *point3 = new DomDomSchedulePoint(ALL, 23, 13);
-  point3->value[0] = 100;
-  point3->value[1] = 0;
-  point3->value[2] = 0;
-  DomDomScheduleMgt.schedulePoints.push_back(point3);
+    DomDomSchedulePoint *point3 = new DomDomSchedulePoint(ALL, 23, 13);
+    point3->value[0] = 100;
+    point3->value[1] = 0;
+    point3->value[2] = 0;
+    DomDomScheduleMgt.schedulePoints.push_back(point3);
 
-  DomDomSchedulePoint *point4 = new DomDomSchedulePoint(ALL, 23, 15);
-  point4->value[0] = 100;
-  point4->value[1] = 100;
-  point4->value[2] = 100;
-  DomDomScheduleMgt.schedulePoints.push_back(point4);
+    DomDomSchedulePoint *point4 = new DomDomSchedulePoint(ALL, 23, 15);
+    point4->value[0] = 100;
+    point4->value[1] = 100;
+    point4->value[2] = 100;
+    DomDomScheduleMgt.schedulePoints.push_back(point4);
 
-  // DomDomScheduleMgt.save();
-
+  }
+  
   // Servidor web
   DomDomWebServer.begin();
-
-  // Iniciamos el control de la programacion
-  DomDomScheduleMgt.begin();
 
   // Control del ventilador
   DomDomFanControl.begin();

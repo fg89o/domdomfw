@@ -23,6 +23,9 @@
 #define DOMDOM_FANCONTROL_h
 
 #include <Arduino.h>
+#include "configuration.h"
+#include "OneWire.h"
+#include "DallasTemperature.h"
 
 /**
  * Clase para el control del ventilador
@@ -48,7 +51,7 @@ class DomDomFanControlClass
         /**
          * Valor anterior de temperatura
          */
-        int _curr_temp;
+        float _curr_temp;
         /**
          * Valor de histeresis
          */
@@ -58,13 +61,22 @@ class DomDomFanControlClass
          */
         float getVoltaje();
         /**
-         * Mutex para thread-safe
+         * Mutex para el voltaje
          */
-        SemaphoreHandle_t xMutex;
+        SemaphoreHandle_t volt_xMutex;
         /**
-         * Valor para pruebas
+         * Mutex para la temperatura
          */
-        int test_value;
+        SemaphoreHandle_t temp_xMutex;
+        /**
+         * Objeto para la comunicacion oneWire con la sonda
+         */
+        OneWire oneWire;
+        /**
+         * Objeto para la temperatura
+         */
+        DallasTemperature *sensors;
+
 
     public:
         /**
@@ -110,7 +122,7 @@ class DomDomFanControlClass
         /**
          * Devuelve la temperatura actual
          */
-        int getTemperature();
+        float getTemperature();
 };
 
 

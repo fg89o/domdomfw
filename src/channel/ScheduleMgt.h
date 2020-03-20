@@ -67,7 +67,7 @@ class DomDomScheduleMgtClass
          */
         std::vector<DomDomSchedulePoint *> schedulePoints;
         /**
-         * Guarda los puntos de programacion cargados en la memoria.
+         * Guarda los puntos de programacion cargados en la memoria y el estado
          */
         bool save();
         /**

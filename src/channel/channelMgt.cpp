@@ -67,7 +67,6 @@ void DomDomChannelMgtClass::saveAll()
 
 void DomDomChannelMgtClass::initEEPROM()
 {
-    Serial.print("...Incializando EEPROM de canales...\n");
     for (int i = 0; i < channels.size() ; i++)
     {
         channels[i]->initEEPROM();

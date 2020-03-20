@@ -100,7 +100,7 @@
 //============================ FAN SECTION ==================================
 //===========================================================================
 
-#define FAN_TEMPERATURE_SENSOR_INPUT    1
+#define FAN_TEMP_SENSOR_PIN             33
 #define FAN_PWM_PIN                     5
 #define FAN_PWM_FEEDBACK_PIN            34
 #define FAN_PWM_RESOLUTION              10
@@ -125,7 +125,8 @@
 #define EEPROM_STA_PASSWORD_LENGTH              64
 #define EEPROM_CHANNEL_MEMORY_SIZE              8
 #define EEPROM_CHANNEL_FIRST_ADDRESS            EEPROM_STA_PASSWORD_ADDRESS +  EEPROM_STA_PASSWORD_LENGTH
-#define EEPROM_SCHEDULE_FIRST_ADDRESS           1 + EEPROM_CHANNEL_FIRST_ADDRESS * EEPROM_CHANNEL_MEMORY_SIZE
+#define EEPROM_SCHEDULE_STATUS_ADDRESS          1 + EEPROM_CHANNEL_FIRST_ADDRESS * EEPROM_CHANNEL_MEMORY_SIZE
+#define EEPROM_SCHEDULE_FIRST_ADDRESS           EEPROM_SCHEDULE_STATUS_ADDRESS + 1
 #define EEPROM_MAX_SCHEDULE_POINTS              50
 #define EEPROM_NTP_ENABLED_ADDRESS              EEPROM_SCHEDULE_FIRST_ADDRESS + EEPROM_MAX_SCHEDULE_POINTS * 9
 #define EEPROM_MDNS_ENABLED_ADDRESS             EEPROM_NTP_ENABLED_ADDRESS + 1
