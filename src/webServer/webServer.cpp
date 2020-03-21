@@ -29,6 +29,7 @@
 #include "channel/channelMgt.h"
 #include "statusLedControl/statusLedControl.h"
 #include "channel/ScheduleMgt.h"
+#include "fan/fanControl.h"
 
 String GetBodyContent(uint8_t *data, size_t len)
 {
@@ -71,6 +72,10 @@ void DomDomWebServerClass::begin()
     // AJAX para el ajuste de los canales
     _server->on("/adjCanal", HTTP_GET, getChannelsAdj);
     _server->on("/adjCanal", HTTP_POST, [](AsyncWebServerRequest * request){}, NULL, setChannelsAdj);
+
+    // AJAX para el control de ventilador
+    _server->on("/fansettings", HTTP_GET, getFanSettings);
+    _server->on("/fansettings", HTTP_POST, [](AsyncWebServerRequest * request){}, NULL, setFanSettings);
 
     _server->onNotFound([](AsyncWebServerRequest *request) {
         request->send(SPIFFS, "/index.html");
@@ -385,6 +390,75 @@ void DomDomWebServerClass::setChannelsAdj(AsyncWebServerRequest * request, uint8
     request->send(response);
 }
 
+void DomDomWebServerClass::getFanSettings(AsyncWebServerRequest *request)
+{
+    AsyncResponseStream *response = request->beginResponseStream("application/json");
+        
+    StaticJsonDocument<1024> jsonDoc;
+    
+    jsonDoc["enabled"] = DomDomFanControl.isStarted();
+    jsonDoc["max_pwm"] = DomDomFanControl.max_pwm;
+    jsonDoc["min_pwm"] = DomDomFanControl.min_pwm;
+    jsonDoc["curr_pwm"] = DomDomFanControl.curr_pwm;
+    jsonDoc["max_temp"] = DomDomFanControl.max_temp;
+    jsonDoc["min_temp"] = DomDomFanControl.min_temp;
+    jsonDoc["curr_temp"] = DomDomFanControl.getTemperature();
+    jsonDoc["fan_voltaje"] = DomDomFanControl.fan_voltaje;
+
+    serializeJson(jsonDoc, *response);
+    
+    response->addHeader("Access-Control-Allow-Origin", "*");
+    request->send(response);
+}
+
+void DomDomWebServerClass::setFanSettings(AsyncWebServerRequest * request, uint8_t *data, size_t len, size_t index, size_t total)
+{
+     String bodyContent = GetBodyContent(data, len);
+    
+    DynamicJsonDocument doc(1024);;
+    DeserializationError err = deserializeJson(doc, bodyContent);
+
+    if (err) { 
+        request->send(400); 
+        return;
+    }
+    
+    if (doc.containsKey("enabled"))
+    {
+        if (doc["enabled"])
+        {
+            Serial.printf("[FAN] Control automático iniciado.");
+            DomDomFanControl.begin();
+        }
+        else
+        {
+            Serial.printf("[FAN] Control automático parado.");
+            DomDomFanControl.end();
+        }
+    }
+
+    if (DomDomFanControl.isStarted())
+    {
+        DomDomFanControl.max_temp = doc["max_temp"];
+        DomDomFanControl.min_temp = doc["min_temp"];
+        DomDomFanControl.max_pwm = doc["max_pwm"];
+        DomDomFanControl.min_pwm = doc["min_pwm"];
+    }
+    else
+    {
+        if (doc.containsKey("curr_pwm"))
+        {
+            DomDomFanControl.setCurrentPWM(doc["curr_pwm"]);
+        }
+    }
+
+    DomDomFanControl.save();
+    
+
+    AsyncResponseStream *response = request->beginResponseStream("application/json");
+    response->addHeader("Access-Control-Allow-Origin", "*");
+    request->send(response);
+}
 
 #if !defined(NO_GLOBAL_INSTANCES)
 DomDomWebServerClass DomDomWebServer;

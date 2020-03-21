@@ -63,9 +63,21 @@ void initEEPROM()
 
     EEPROM.writeBool(EEPROM_SCHEDULE_STATUS_ADDRESS, true);
 
+    int address = EEPROM_FAN_ENABLED_ADDRESS;
+    EEPROM.writeBool(address, true);
+    address++;
+    EEPROM.writeShort(address, pow(2, FAN_PWM_RESOLUTION));
+    address += 2;
+    EEPROM.writeShort(address, 0);
+    address += 2;
+    EEPROM.writeShort(address, 40);
+    address += 2;
+    EEPROM.writeShort(address, 30);
+    address += 2;
     EEPROM.commit();
 
     DomDomChannelMgt.initEEPROM();
+
   }
 
 }
@@ -130,7 +142,7 @@ void setup()
   DomDomWebServer.begin();
 
   // Control del ventilador
-  DomDomFanControl.begin();
+  DomDomFanControl.load();
 
 }
 

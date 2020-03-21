@@ -116,7 +116,8 @@
 //============================ EEPROM SECTION ===============================
 //===========================================================================
 
-#define EEPROM_SIZE                             1024
+
+#define EEPROM_SIZE                             2048
 #define EEPROM_INIT_RETRIES                     10
 #define EEPROM_STA_ENABLED_ADDRESS              4
 #define EEPROM_STA_SSID_NAME_ADDRESS            EEPROM_STA_ENABLED_ADDRESS + 1
@@ -132,5 +133,6 @@
 #define EEPROM_MDNS_ENABLED_ADDRESS             EEPROM_NTP_ENABLED_ADDRESS + 1
 #define EEPROM_MDNS_HOSTNAME_ADDRESS            EEPROM_MDNS_ENABLED_ADDRESS + 1
 #define EEPROM_MDNS_HOSTNAME_LENGTH             32
+#define EEPROM_FAN_ENABLED_ADDRESS              EEPROM_MDNS_HOSTNAME_ADDRESS + EEPROM_MDNS_HOSTNAME_LENGTH
 
 #endif /* GLOBAL_CONFIGURACION_h */

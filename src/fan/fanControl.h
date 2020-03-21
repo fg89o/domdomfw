@@ -123,6 +123,22 @@ class DomDomFanControlClass
          * Devuelve la temperatura actual
          */
         float getTemperature();
+        /**
+         * Indica si el control de ventilador esta activo
+         */
+        bool isStarted() const {return _started; };
+        /**
+         * Establece el PWM para el ventialdor
+         */
+        void setCurrentPWM(int pwm);
+        /**
+         * Guarda el estado actual en la memoria
+         */
+        bool save();
+        /**
+         * Carga los valores almacenados en memoria
+         */
+        bool load();
 };
 
 
