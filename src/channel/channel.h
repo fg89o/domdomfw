@@ -23,6 +23,7 @@
 #define DOMDOM_CHANNEL_h
 
 #include <Arduino.h>
+#include "channelLed.h"
 
 /**
  * Representa un canal.
@@ -77,6 +78,10 @@ class DomDomChannelClass
          * Guarda el valor PWM actual en memoria.
          */
         bool saveCurrentPWM();
+        /**
+         * Devuelve la primera direccion de memoria para este canal
+         */
+        int getFirstEEPROMAddress();
 
     public:
         /**
@@ -87,6 +92,10 @@ class DomDomChannelClass
          * Constructor con mas parametros.
          */
         DomDomChannelClass(char num, char pwm_pin, char resolution);
+        /**
+         * Configuracion de leds para este canal
+         */
+        std::vector<DomDomChannelLed *> leds;
         /**
          * Valor maximo para el PWM configurado por el usuario.
          */

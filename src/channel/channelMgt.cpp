@@ -24,7 +24,6 @@
 
 DomDomChannelMgtClass::DomDomChannelMgtClass()
 {
-    int count = 0;
     channels.clear();
 
     int pins[CHANNEL_SIZE] = CHANNEL_PWM_PINS;
@@ -32,8 +31,17 @@ DomDomChannelMgtClass::DomDomChannelMgtClass()
 
     for (int i = 0; i < CHANNEL_SIZE; i++)
     {
-        channels.push_back(new DomDomChannelClass(i, pins[i], resolution[i]));
+        DomDomChannelClass *channel = new DomDomChannelClass(i, pins[i], resolution[i]);
+        channels.push_back(channel);
+
+        DomDomChannelLed *led = new DomDomChannelLed();
+        led->K = 6500;
+        led->nm = 0;
+        led->W = 1;
+
+        channel->leds.push_back(led);
     }
+
 };
 
 void DomDomChannelMgtClass::begin()

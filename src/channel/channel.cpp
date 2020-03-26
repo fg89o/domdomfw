@@ -133,8 +133,7 @@ bool DomDomChannelClass::setPWMResolution(uint8_t value)
 
 bool DomDomChannelClass::saveCurrentPWM()
 {
-    int address = EEPROM_CHANNEL_FIRST_ADDRESS ;
-    address += _channel_num  * EEPROM_CHANNEL_MEMORY_SIZE;
+    int address = getFirstEEPROMAddress();
     address += 6;
 
     EEPROM.writeUShort(address, _current_pwm);
@@ -143,8 +142,7 @@ bool DomDomChannelClass::saveCurrentPWM()
 
 bool DomDomChannelClass::save()
 {
-    int address = EEPROM_CHANNEL_FIRST_ADDRESS ;
-    address += _channel_num * EEPROM_CHANNEL_MEMORY_SIZE;
+    int address = getFirstEEPROMAddress();
 
     EEPROM.write(address, (_channel_num+1));
     address += 1;
@@ -155,7 +153,24 @@ bool DomDomChannelClass::save()
     EEPROM.writeUShort(address, min_limit_pwm);
     address += 2;
     saveCurrentPWM();
-    
+    address += 2;
+
+    if (leds.size() > 0)
+    {
+        EEPROM.write(address, leds.size());
+        address++;
+
+        for (int i = 0; i < leds.size(); i++)
+        {
+            EEPROM.writeUShort(address, leds[i]->K);
+            address += 2;
+            EEPROM.writeUShort(address, leds[i]->nm);
+            address += 2;
+            EEPROM.writeUShort(address, leds[i]->W);
+            address += 2;
+        }
+    }
+
     bool result = EEPROM.commit();
 
     if (result)
@@ -168,8 +183,7 @@ bool DomDomChannelClass::save()
 
 bool DomDomChannelClass::loadFromEEPROM()
 {
-    int address = EEPROM_CHANNEL_FIRST_ADDRESS ;
-    address += _channel_num * EEPROM_CHANNEL_MEMORY_SIZE;
+    int address = getFirstEEPROMAddress();
 
     if (EEPROM.read(address) == (_channel_num+1))
     {
@@ -182,7 +196,25 @@ bool DomDomChannelClass::loadFromEEPROM()
         address += 2;
         uint16_t pwm = EEPROM.readUShort(address);
         _current_pwm = pwm;
-        
+        address += 2;
+
+        int leds_count = EEPROM.read(address);
+        address++;
+
+        leds.clear();
+        for (int i=0; i < leds_count; i++)
+        {
+            DomDomChannelLed* led = new DomDomChannelLed();
+            led->K = EEPROM.readUShort(address);
+            address += 2;
+            led->nm = EEPROM.readUShort(address);
+            address += 2;
+            led->W = EEPROM.readUShort(address);
+            address += 2;
+
+            leds.push_back(led);
+        }
+
         Serial.printf("[CHANNEL %d] Configuracion cargada correctamente.\n", _channel_num);
         
     } else {
@@ -196,16 +228,33 @@ bool DomDomChannelClass::loadFromEEPROM()
 
 void DomDomChannelClass::initEEPROM()
 {
-    int address = EEPROM_CHANNEL_FIRST_ADDRESS ;
-    address += _channel_num * EEPROM_CHANNEL_MEMORY_SIZE;
+    int address = getFirstEEPROMAddress();
 
+    // canal
     EEPROM.write(address,0);
     address += 1;
+    // enabled
     EEPROM.write(address,0);
     address += 1;
+    // MAX PWM
     EEPROM.writeUShort(address,0);
     address += 2;
+    // MIN PWM
     EEPROM.writeUShort(address,0);
     address += 2;
+    // CURRENT PWM
     EEPROM.writeUShort(address,0);
+    address += 2;
+    // LEDS
+    EEPROM.write(address,0);
+}
+
+int DomDomChannelClass::getFirstEEPROMAddress()
+{
+    int address = EEPROM_CHANNEL_FIRST_ADDRESS;             /* Primera direccion de memoria*/
+    address += _channel_num * EEPROM_CHANNEL_MEMORY_SIZE;   /* Numero de canales multiplicado por lo que ocupa cada canal */
+    /* Numero de canales multiplacado por el maximo de led que puede tener cada uno multiplicado por lo que ocupa cada led */
+    address += _channel_num * CHANNEL_MAX_LEDS_CONFIG * EEPROM_CHANNEL_LED_MEMORY_SIZE;     
+
+    return address;
 }

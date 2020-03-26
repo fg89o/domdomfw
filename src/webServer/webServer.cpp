@@ -238,6 +238,7 @@ void DomDomWebServerClass::getChannelsData(AsyncWebServerRequest *request)
         
     StaticJsonDocument<1024> jsonDoc;
     
+    jsonDoc["modo_programado"] = DomDomScheduleMgt.isStarted();
     JsonArray ports = jsonDoc.createNestedArray("canales");
 
     for (int i = 0; i < DomDomChannelMgt.channels.size(); i++)
@@ -249,6 +250,15 @@ void DomDomWebServerClass::getChannelsData(AsyncWebServerRequest *request)
         obj["min_pwm"] = DomDomChannelMgt.channels[i]->min_limit_pwm;
         obj["max_pwm"] = DomDomChannelMgt.channels[i]->max_limit_pwm;
         obj["current_pwm"] = DomDomChannelMgt.channels[i]->current_pwm();
+
+        JsonArray leds = obj.createNestedArray("leds");
+        for (int j = 0; j < DomDomChannelMgt.channels[i]->leds.size(); j++)
+        {
+            JsonObject led = leds.createNestedObject();
+            led["K"] = DomDomChannelMgt.channels[i]->leds[j]->K;
+            led["nm"] = DomDomChannelMgt.channels[i]->leds[j]->nm;
+            led["W"] = DomDomChannelMgt.channels[i]->leds[j]->W;
+        }
     }
 
     serializeJson(jsonDoc, *response);
@@ -269,6 +279,21 @@ void DomDomWebServerClass::setChannelsData(AsyncWebServerRequest * request, uint
         return;
     }
 
+    if (doc.containsKey("modo_programado"))
+    {
+        if (doc["modo_programado"])
+        {
+            Serial.printf("[Schedule] Programacion iniciada.\n");
+            DomDomScheduleMgt.begin();
+        }
+        else
+        {
+            Serial.printf("[Schedule] Programacion parada.\n");
+            DomDomScheduleMgt.end();
+        }
+        DomDomScheduleMgt.save();
+    }
+
     if (doc.containsKey("canales"))
     {
         JsonArray canales = doc["canales"].as<JsonArray>();
@@ -278,7 +303,32 @@ void DomDomWebServerClass::setChannelsData(AsyncWebServerRequest * request, uint
             channel->setEnabled(canal["enabled"]);
             channel->max_limit_pwm = canal["max_pwm"];
             channel->min_limit_pwm = canal["min_pwm"];
-            channel->setPWMValue(channel->current_pwm());
+
+            if (!DomDomScheduleMgt.isStarted())
+            {
+                DomDomStatusLedControl.blink(1);
+                channel->setPWMValue(canal["current_pwm"]);
+            }
+            
+            if (canal.containsKey("leds"))
+            {
+                channel->leds.clear();
+                JsonArray leds = canal["leds"].as<JsonArray>();
+                for(JsonObject led : leds)
+                {
+                    DomDomChannelLed *obj = new DomDomChannelLed();
+                    obj->K = led["K"];
+                    obj->nm = led["nm"];
+                    obj->W = led["W"];
+                    
+                    if (obj->K > 0 || obj->nm > 0 || obj->W > 0)
+                    {
+                        channel->leds.push_back(obj);
+                    }
+                    
+                }
+            }
+
             channel->save();
         }
 
