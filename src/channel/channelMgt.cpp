@@ -26,11 +26,14 @@ DomDomChannelMgtClass::DomDomChannelMgtClass()
 {
     int count = 0;
     channels.clear();
-    channels.push_back(new DomDomChannelClass(count++, CHANNEL_1_PWM_PIN, CHANNEL_1_RESOLUTION));
-    channels.push_back(new DomDomChannelClass(count++, CHANNEL_2_PWM_PIN, CHANNEL_2_RESOLUTION));
-    channels.push_back(new DomDomChannelClass(count++, CHANNEL_3_PWM_PIN, CHANNEL_3_RESOLUTION));
-    channels.push_back(new DomDomChannelClass(count++, CHANNEL_4_PWM_PIN, CHANNEL_4_RESOLUTION));
-    channels.push_back(new DomDomChannelClass(count++, CHANNEL_5_PWM_PIN, CHANNEL_5_RESOLUTION));
+
+    int pins[CHANNEL_SIZE] = CHANNEL_PWM_PINS;
+    int resolution[CHANNEL_SIZE] = CHANNEL_RESOLUTIONS;
+
+    for (int i = 0; i < CHANNEL_SIZE; i++)
+    {
+        channels.push_back(new DomDomChannelClass(i, pins[i], resolution[i]));
+    }
 };
 
 void DomDomChannelMgtClass::begin()

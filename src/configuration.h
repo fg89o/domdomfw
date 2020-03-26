@@ -71,17 +71,9 @@
 //============================ CHANNELS SECTION =============================
 //===========================================================================
 
-#define CHANNEL_1_PWM_PIN       25  // AZUL
-#define CHANNEL_2_PWM_PIN       26  // VERDE
-#define CHANNEL_3_PWM_PIN       27  // ROJO
-#define CHANNEL_4_PWM_PIN       0
-#define CHANNEL_5_PWM_PIN       0
-
-#define CHANNEL_1_RESOLUTION    10
-#define CHANNEL_2_RESOLUTION    10
-#define CHANNEL_3_RESOLUTION    10
-#define CHANNEL_4_RESOLUTION    10
-#define CHANNEL_5_RESOLUTION    10
+#define CHANNEL_SIZE            3
+#define CHANNEL_PWM_PINS        {25, 26, 27}
+#define CHANNEL_RESOLUTIONS     {10, 10, 10}
 
 //===========================================================================
 //===================== RTC Y  NTP SECTION ==================================
