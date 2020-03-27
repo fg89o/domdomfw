@@ -73,14 +73,6 @@ class DomDomWebServerClass
          */
         static void setRestart(AsyncWebServerRequest * request, uint8_t *data, size_t len, size_t index, size_t total);
         /**
-         * Devuelve un JSON con la informacion de los canales.
-         */
-        static void getChannelsAdj(AsyncWebServerRequest *request);
-        /**
-         * Acepta un JSON para configurar la potencia de los canales manualmente.
-         */
-        static void setChannelsAdj(AsyncWebServerRequest * request, uint8_t *data, size_t len, size_t index, size_t total);
-        /**
          * Devuelve un JSON con la configuracion para el ventilador
          */
         static void getFanSettings(AsyncWebServerRequest *request);
