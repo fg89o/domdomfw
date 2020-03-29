@@ -48,8 +48,11 @@ void SendResponse(AsyncWebServerRequest *request, AsyncResponseStream *response 
 
 void SendResponse(AsyncWebServerRequest *request)
 {
-    AsyncResponseStream *response = request->beginResponseStream("application/json");
+    AsyncResponseStream *response = request->beginResponseStream("text/plain");
+    
     response->addHeader("Access-Control-Allow-Origin", "*");
+    response->addHeader("Access-Control-Allow-Methods", "GET, POST");
+    response->addHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
     request->send(response);
 }
 
@@ -85,6 +88,13 @@ void DomDomWebServerClass::begin()
     // AJAX para el control de ventilador
     _server->on("/fansettings", HTTP_GET, getFanSettings);
     _server->on("/fansettings", HTTP_POST, [](AsyncWebServerRequest * request){}, NULL, setFanSettings);
+
+    // AJAX para los puntos de programacion
+    _server->on("/schedule", HTTP_GET, getSchedule);
+    _server->on("/schedule", HTTP_POST, [](AsyncWebServerRequest * request){}, NULL, setSchedule);
+
+    // AJAX para realizar un test de color
+    _server->on("/test", HTTP_POST, [](AsyncWebServerRequest * request){}, NULL, setTest);
 
     _server->onNotFound([](AsyncWebServerRequest *request) {
         request->send(SPIFFS, "/index.html");
@@ -260,6 +270,7 @@ void DomDomWebServerClass::getChannelsData(AsyncWebServerRequest *request)
         obj["min_pwm"] = DomDomChannelMgt.channels[i]->min_limit_pwm;
         obj["max_pwm"] = DomDomChannelMgt.channels[i]->max_limit_pwm;
         obj["current_pwm"] = DomDomChannelMgt.channels[i]->current_pwm();
+        obj["max_leds"] = CHANNEL_MAX_LEDS_CONFIG;
 
         JsonArray leds = obj.createNestedArray("leds");
         for (int j = 0; j < DomDomChannelMgt.channels[i]->leds.size(); j++)
@@ -439,6 +450,94 @@ void DomDomWebServerClass::setFanSettings(AsyncWebServerRequest * request, uint8
 
     DomDomFanControl.save();
     
+    SendResponse(request);
+}
+
+void DomDomWebServerClass::getSchedule(AsyncWebServerRequest *request)
+{
+    AsyncResponseStream *response = request->beginResponseStream("application/json");
+        
+    DynamicJsonDocument jsonDoc(6000);
+    
+    jsonDoc["max_schedule_points"] = EEPROM_MAX_SCHEDULE_POINTS;
+    jsonDoc["channel_size"] = CHANNEL_SIZE;
+    JsonArray points = jsonDoc.createNestedArray("schedule");
+
+    for(int i = 0; i < DomDomScheduleMgt.schedulePoints.size(); i++)
+    {
+        JsonObject obj = points.createNestedObject();
+        obj["hour"] = DomDomScheduleMgt.schedulePoints[i]->hour;
+        obj["minute"] = DomDomScheduleMgt.schedulePoints[i]->minute;
+        obj["fade"] = DomDomScheduleMgt.schedulePoints[i]->fade;
+        
+        JsonArray values = obj.createNestedArray("values");
+        for(int j = 0; j < DomDomScheduleMgt.schedulePoints[i]->value.size(); j++)
+        {
+            values.add(DomDomScheduleMgt.schedulePoints[i]->value[j]);
+        }
+    }
+
+    serializeJson(jsonDoc, *response);
+    
+    SendResponse(request,response);
+}
+
+void DomDomWebServerClass::setSchedule(AsyncWebServerRequest * request, uint8_t *data, size_t len, size_t index, size_t total)
+{
+    String bodyContent = GetBodyContent(data, len);
+    
+    DynamicJsonDocument doc(6000);
+    DeserializationError err = deserializeJson(doc, bodyContent);
+
+    if (err) { 
+        request->send(400); 
+        return;
+    }
+
+    DomDomScheduleMgt.schedulePoints.clear();
+    JsonArray points = doc.as<JsonArray>();
+    Serial.printf("[Schedule] Recibidos %d puntos\n", points.size());
+    for(int i = 0; i < points.size(); i++)
+    {
+        DomDomSchedulePoint *p = new DomDomSchedulePoint(ALL, points[i]["hour"], points[i]["minute"], points[i]["fade"]);
+        for(int j = 0; j < CHANNEL_SIZE; j++)
+        {
+            p->value[j] = points[i]["values"][j];
+        }
+        DomDomScheduleMgt.schedulePoints.push_back(p);
+    }
+
+    Serial.printf("[Schedule] Guardando...\n");
+    DomDomScheduleMgt.save();
+    Serial.printf("[Schedule] Guardado\n");
+
+    SendResponse(request);
+}
+
+void DomDomWebServerClass::setTest(AsyncWebServerRequest * request, uint8_t *data, size_t len, size_t index, size_t total)
+{
+    String bodyContent = GetBodyContent(data, len);
+    
+    DynamicJsonDocument doc(2048);;
+    DeserializationError err = deserializeJson(doc, bodyContent);
+
+    if (err) { 
+        request->send(400); 
+        return;
+    }
+    
+    if (doc.containsKey("canales"))
+    {
+        JsonArray canales = doc["canales"].as<JsonArray>();
+        uint16_t pwm[canales.size()];
+
+        for(int i = 0; i < canales.size(); i++)
+        {
+            pwm[i] = canales[i]["current_pwm"];
+        }
+        
+        DomDomScheduleMgt.startTest(pwm);
+    }
 
     SendResponse(request);
 }

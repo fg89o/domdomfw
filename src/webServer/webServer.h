@@ -80,6 +80,18 @@ class DomDomWebServerClass
          * Acepta un JSON para configurar el ventilador
          */
         static void setFanSettings(AsyncWebServerRequest * request, uint8_t *data, size_t len, size_t index, size_t total);
+        /**
+         * Devuelve un JSON con la programacion
+         */
+        static void getSchedule(AsyncWebServerRequest *request);
+        /**
+         * Acepta un JSON para configurar un punto de programacion
+         */
+        static void setSchedule(AsyncWebServerRequest * request, uint8_t *data, size_t len, size_t index, size_t total);
+        /**
+         * Acepta un JSON para configurar un test de color
+         */
+        static void setTest(AsyncWebServerRequest * request, uint8_t *data, size_t len, size_t index, size_t total);
 };
 
 #if !defined(NO_GLOBAL_INSTANCES)

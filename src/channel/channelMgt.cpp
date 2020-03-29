@@ -84,6 +84,7 @@ void DomDomChannelMgtClass::initEEPROM()
     }
 }
 
+
 #if !defined(NO_GLOBAL_INSTANCES)
 DomDomChannelMgtClass DomDomChannelMgt;
 #endif

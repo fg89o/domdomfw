@@ -121,8 +121,9 @@ bool DomDomScheduleMgtClass::save()
             EEPROM.write(address++, schedulePoints[i]->hour);
             EEPROM.write(address++, schedulePoints[i]->minute);
             EEPROM.write(address++, schedulePoints[i]->fade);
+            EEPROM.write(address++, schedulePoints[i]->value.size());
 
-            for(int j = 0; j < 5; j++)
+            for(int j = 0; j < schedulePoints[i]->value.size(); j++)
             {
                 EEPROM.write(address++, schedulePoints[i]->value[j]);
             }
@@ -168,8 +169,9 @@ bool DomDomScheduleMgtClass::load()
             uint8_t fade = EEPROM.read(address++);
             
             addSchedulePoint(day,hour,minute,fade);
-
-            for(int j = 0; j < 5; j++)
+            
+            uint8_t count = EEPROM.read(address++);
+            for(int j = 0; j < count; j++)
             {
                 schedulePoints[schedulePoints.size()-1]->value[j] = EEPROM.read(address++);
             }
@@ -325,6 +327,55 @@ int DomDomScheduleMgtClass::calcFadeValue(int prevValue, int nextValue, int min_
     }   
 
     return 0;
+}
+
+void DomDomScheduleMgtClass::startTest(uint16_t pwm[])
+{
+    if (_testInProgress)
+    {
+        _testInProgress = false;
+        delay(500);
+    }
+
+    _testInProgress = true;
+    end();
+
+    for(int i = 0; i < DomDomChannelMgt.channels.size(); i++)
+    {
+        DomDomChannelMgt.channels[i]->setPWMValue(pwm[i]);
+    }
+
+    xTaskCreate(
+        this->testTask,     /* Task function. */
+        "testTask",         /* String with name of task. */
+        10000,              /* Stack size in bytes. */
+        NULL,               /* Parameter passed as input of the task */
+        1,                  /* Priority of the task. */
+        NULL                /* Task handle. */
+    );
+
+}
+
+void DomDomScheduleMgtClass::testTask(void *parameter)
+{
+    for(int i = 0; i < 300; i++)
+    {
+        if (!DomDomScheduleMgt.testInProgress())
+        {
+            break;
+        }
+        vTaskDelay(100 / portTICK_PERIOD_MS);
+    }
+
+    DomDomScheduleMgt.stopTest();
+    DomDomScheduleMgt.begin();
+
+    vTaskDelete(NULL);
+}
+
+void DomDomScheduleMgtClass::stopTest()
+{
+    _testInProgress = false;
 }
 
 #if !defined(NO_GLOBAL_INSTANCES)

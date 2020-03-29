@@ -22,6 +22,8 @@
 #ifndef DOMDOM_SCHEDULEPOINT_h
 #define DOMDOM_SCHEDULEPOINT_h
 
+#include <Arduino.h>
+
 /**
  * Enumerado para los dias de la semana
  */
@@ -78,7 +80,7 @@ class DomDomSchedulePoint
         /**
          * Array con los valores para cada canal.
          */
-        char value[5] = {0,0,0,0,0};
+        std::vector<uint8_t> value;
 };
 
 #endif /* DOMDOM_SCHEDULEPOINT_h */

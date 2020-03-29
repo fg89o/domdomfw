@@ -19,6 +19,7 @@
  */
 
 #include "schedulePoint.h"
+#include "configuration.h"
 
 DomDomSchedulePoint::DomDomSchedulePoint(){};
 DomDomSchedulePoint::DomDomSchedulePoint(DomDomDayOfWeek _day, char _hour, char _minute, bool _fade)
@@ -27,4 +28,9 @@ DomDomSchedulePoint::DomDomSchedulePoint(DomDomDayOfWeek _day, char _hour, char 
     hour = _hour;
     minute = _minute;
     fade = _fade;
+
+    for (int i = 0; i < CHANNEL_SIZE; i++)
+    {
+        value.push_back(0);
+    }
 }

@@ -30,6 +30,9 @@
  */
 class DomDomChannelMgtClass
 {
+    private:
+        bool _testInProgress = false;
+
     public:
         /**
          * Constructor
@@ -39,6 +42,10 @@ class DomDomChannelMgtClass
          * Array con todos los canales disponibles.
          */
         std::vector<DomDomChannelClass *> channels;
+        /**
+         * Devuelve un flag indicando si ya hay un test en progreso
+         */
+        int testInProgress() const {return _testInProgress; };
         /**
          * Inicia todos los canales.
          */

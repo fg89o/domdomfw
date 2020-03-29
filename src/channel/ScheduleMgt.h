@@ -37,6 +37,10 @@ class DomDomScheduleMgtClass
 {
     private:
         /**
+         * Indica si hay un test en progreso
+         */
+        bool _testInProgress = false;
+        /**
          * Indica si el proceso está activado.
          */
         bool _started = false;
@@ -48,6 +52,10 @@ class DomDomScheduleMgtClass
          * Tarea del programador.
          */
         static void scheduleTask(void * parameter);
+        /**
+         * Tarea del programador.
+         */
+        static void testTask(void * parameter);
         /**
          * Devuelve el valor proporcional entre @prevValue y @nextValue en base a @anterior y @siguiente.
          */
@@ -62,6 +70,10 @@ class DomDomScheduleMgtClass
          * Destructor.
          */
         ~DomDomScheduleMgtClass();
+        /**
+         * Indica si hay algun test en proceso
+         */
+        bool testInProgress() const { return _testInProgress; };
         /**
          * Puntos de programacion cargados.
          */
@@ -103,6 +115,14 @@ class DomDomScheduleMgtClass
          * Devuelve un booleano indicando si se ha encontrado un punto de programacion o no.
          */
         bool getShedulePoint(DateTime &dt, DomDomSchedulePoint *&point, bool previous);
+        /**
+         * Realiza un test con los valores pasados por parametros
+         */
+        void startTest(uint16_t pwm[]);
+        /**
+         * Para el test
+         */
+        void stopTest();
 };
 
 
