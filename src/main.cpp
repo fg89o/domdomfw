@@ -141,7 +141,7 @@ void setup()
   // Servidor web
   DomDomWebServer.begin();
 
-  // Control del ventilador
+  // // Control del ventilador
   DomDomFanControl.load();
 
 }

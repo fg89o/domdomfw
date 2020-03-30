@@ -26,6 +26,8 @@
 #include "../wifi/WiFi.h"
 #include "configuration.h"
 
+#include "zones.h"
+
 DomDomRTCClass::DomDomRTCClass(){}
 
 bool DomDomRTCClass::begin()
@@ -51,9 +53,7 @@ bool DomDomRTCClass::begin()
         rtc.adjust(DateTime(F(__DATE__), F(__TIME__)));
     }
 
-    int unixtime_sec = rtc.now().unixtime();
-    timeval epoch = {unixtime_sec, 0};
-    settimeofday((const timeval*)&epoch, 0);
+    adjust(rtc.now().unixtime());
 
     bool use_ntp = EEPROM.read(EEPROM_NTP_ENABLED_ADDRESS);
     if (use_ntp && DomDomWifi.getMode() == 1)
@@ -69,11 +69,11 @@ bool DomDomRTCClass::updateFromNTP()
     bool result = false;
     if (DomDomWifi.getMode() == 1)
     {
-        result = timeClient->forceUpdate();
+        result = timeClient->forceUpdate();;
         if (result)
         {
-            DateTime dt (timeClient->getEpochTime());
-            adjust(dt);
+            Serial.printf("[NTP] tiempo recibido: %ld\n", timeClient->getEpochTime());
+            adjust(timeClient->getEpochTime());
         }
     }
     
@@ -87,7 +87,7 @@ void DomDomRTCClass::beginNTP()
         _ntpStarted = true;
         Serial.println("Inicializando servicio NTP...");
 
-        timeClient = new NTPClient(_ntpUDP, NTP_SERVERNAME, NTP_TIMEZONEOFFSET, 60000);
+        timeClient = new NTPClient(_ntpUDP, NTP_SERVERNAME, 0, 0);
         timeClient->begin();
 
         xTaskCreate(
@@ -107,13 +107,12 @@ void DomDomRTCClass::endNTP()
     {
         _ntpStarted = false;
         timeClient->end();
-        vTaskDelete(_ntp_task);
     }
 }
 
 void DomDomRTCClass::NTPTask(void * parameter)
 {
-    while(true)
+    while(DomDomRTC.NTPStarted())
     {
         int ms = 0;
         if (DomDomRTC.updateFromNTP())
@@ -128,6 +127,8 @@ void DomDomRTCClass::NTPTask(void * parameter)
         
         vTaskDelay(ms / portTICK_PERIOD_MS);
     }
+
+    vTaskDelete(NULL);
 }
 
 void DomDomRTCClass::setNTPEnabled(bool enabled)
@@ -148,24 +149,45 @@ void DomDomRTCClass::setNTPEnabled(bool enabled)
 
 DateTime DomDomRTCClass::now()
 {
-    struct timeval epoch;
-    gettimeofday(&epoch, NULL);
-
-    DateTime dt (epoch.tv_sec);
-
+    time_t now;
+    time(&now);
+    
+    DateTime dt (now);
     return dt;
 }
 
-void DomDomRTCClass::adjust(DateTime dt)
+void DomDomRTCClass::adjust(time_t dt)
 {
-    struct timeval epoch;
-    epoch.tv_sec = dt.unixtime();
+    // Ajustamos el reloj externo a UTC
+    DateTime nDate = DateTime(dt);
+    rtc.adjust(nDate);
+
+    Serial.printf("[RTC] RTC externo ajustado a %s\n",nDate.timestamp().c_str());
+
+    // Reloj interno
+    tm timeinfo;
+    const char* zone = _ntpPosixZone.c_str();
+    setenv("TZ", zone, 1);
+    tzset();
+
+    localtime_r(&dt, &timeinfo);
+
+    nDate = DateTime(
+        timeinfo.tm_year + 1900,
+        timeinfo.tm_mon + 1,
+        timeinfo.tm_mday,
+        timeinfo.tm_hour,
+        timeinfo.tm_min,
+        timeinfo.tm_sec
+    );
+
+    timeval epoch;
+    epoch.tv_sec = nDate.unixtime();
     epoch.tv_usec = 0;
 
-    rtc.adjust(dt);
     settimeofday((const timeval*)&epoch, 0);
 
-    Serial.printf("[RTC] Fecha y hora ajustada a %s\n",dt.timestamp().c_str());
+    Serial.printf("[RTC] RTC interno ajustado a %s\n",nDate.timestamp().c_str());
 }
 
 #if !defined(NO_GLOBAL_INSTANCES)

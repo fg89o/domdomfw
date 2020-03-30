@@ -113,7 +113,7 @@ void DomDomWebServerClass::getRTCData(AsyncWebServerRequest *request)
    jsonDoc["ready"] = DomDomRTC.ready;
    jsonDoc["enabled"] = DomDomRTC.NTPStarted();
    jsonDoc["servername"] = NTP_SERVERNAME;
-   jsonDoc["timezoneOffset"] = NTP_TIMEZONEOFFSET;
+   jsonDoc["timezoneOffset"] = 3600;
    jsonDoc["unixtime"] = DomDomRTC.now().unixtime();
 
    serializeJson(jsonDoc, *response);
@@ -158,8 +158,8 @@ void DomDomWebServerClass::setRTCData(AsyncWebServerRequest * request, uint8_t *
         DomDomRTC.setNTPEnabled(false);
         uint32_t unixtime = doc["unixtime"];
         Serial.printf("Recibido cambio de fecha a: %d\n", unixtime);
-        DateTime dt(unixtime);
-        DomDomRTC.adjust(dt);
+        //DateTime dt(unixtime);
+        DomDomRTC.adjust(unixtime);
     }
     else{
         Serial.printf("Habilitado servicio NTP\n");

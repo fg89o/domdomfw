@@ -27,6 +27,7 @@
 #include "../lib/RTCLib/RTClib.h"
 #include "../lib/NTPClient/NTPClient.h"
 #include <WiFiUdp.h>
+#include "../configuration.h"
 
 /**
  * Clase encargada de la gestion de la hora.
@@ -39,14 +40,6 @@
 class DomDomRTCClass
 {
     private:
-        /**
-         * Clase UDP para el servicio NTP.
-         */
-        WiFiUDP _ntpUDP;
-        /**
-         * Cliente NTP para la actualizacion de la hora por internet
-         */
-        NTPClient *timeClient;
         /**
          * Indica si el servicio NTP esta activo o no.
          */
@@ -64,6 +57,22 @@ class DomDomRTCClass
          * de fecha/hora externo.
          */
         RTC_DS3231 rtc;
+        /**
+         * Servidor NTP al que nos conectaremos
+         */
+        String _ntpServerName = NTP_SERVERNAME;
+        /**
+         * Zona horaria
+         */
+        String _ntpPosixZone = NTP_POSIX_TIMEZONE;
+        /**
+         * Clase UDP para el servicio NTP.
+         */
+        WiFiUDP _ntpUDP;
+        /**
+         * Cliente NTP para la actualizacion de la hora por internet
+         */
+        NTPClient *timeClient;
 
     public:
         /**
@@ -81,7 +90,7 @@ class DomDomRTCClass
         /**
          * Ajusta el RTC interno y externo con la nueva fecha y hora
          */
-        void adjust(DateTime dt);
+        void adjust(time_t dt);
         /**
          * Devuelve la fecha y hora actual
          */
@@ -111,6 +120,10 @@ class DomDomRTCClass
          * Indica si el NTP esta en ejecucion
          */
         bool NTPStarted() const { return _ntpStarted; };
+        /**
+         * Devuelve la zona horaria en formato POSIX
+         */
+        String NTPPosixZone() const { return _ntpPosixZone; };
 };
 
 #if !defined(NO_GLOBAL_INSTANCES)
