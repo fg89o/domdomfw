@@ -22,7 +22,7 @@
 #include "configuration.h"
 
 DomDomSchedulePoint::DomDomSchedulePoint(){};
-DomDomSchedulePoint::DomDomSchedulePoint(DomDomDayOfWeek _day, char _hour, char _minute, bool _fade)
+DomDomSchedulePoint::DomDomSchedulePoint(DomDomDayOfWeek _day, uint8_t _hour, uint8_t _minute, bool _fade)
 {
     dayOfWeek = _day;
     hour = _hour;

@@ -113,7 +113,6 @@ void DomDomWebServerClass::getRTCData(AsyncWebServerRequest *request)
    jsonDoc["ready"] = DomDomRTC.ready;
    jsonDoc["enabled"] = DomDomRTC.NTPStarted();
    jsonDoc["servername"] = NTP_SERVERNAME;
-   jsonDoc["timezoneOffset"] = 3600;
    jsonDoc["unixtime"] = DomDomRTC.now().unixtime();
 
    serializeJson(jsonDoc, *response);
@@ -259,6 +258,15 @@ void DomDomWebServerClass::getChannelsData(AsyncWebServerRequest *request)
     StaticJsonDocument<1024> jsonDoc;
     
     jsonDoc["modo_programado"] = DomDomScheduleMgt.isStarted();
+
+    DomDomSchedulePoint * point = nullptr;
+    DateTime dt;
+    if (DomDomScheduleMgt.getShedulePoint(dt, point, false))
+    {
+        jsonDoc["siguiente_punto_hora"] = point->hour;
+        jsonDoc["siguiente_punto_minuto"] = point->minute;
+    }
+    
     JsonArray ports = jsonDoc.createNestedArray("canales");
 
     for (int i = 0; i < DomDomChannelMgt.channels.size(); i++)

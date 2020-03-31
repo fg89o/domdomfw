@@ -59,7 +59,7 @@ class DomDomSchedulePoint
         /**
          * Constructor para inicializar con ciertos valores.
          */
-        DomDomSchedulePoint(DomDomDayOfWeek dayOfWeek, char hour, char minute, bool fade = true);
+        DomDomSchedulePoint(DomDomDayOfWeek dayOfWeek, uint8_t hour, uint8_t minute, bool fade = true);
         /**
          * Indica si el cambio es progresivo en el tiempo o no.
          */
@@ -72,11 +72,11 @@ class DomDomSchedulePoint
         /**
          * Hora del punto de programacion.
          */
-        char hour;
+        uint8_t hour;
         /**
          * Minuto del punto de programacion.
          */
-        char minute;
+        uint8_t minute;
         /**
          * Array con los valores para cada canal.
          */

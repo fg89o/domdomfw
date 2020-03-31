@@ -104,6 +104,8 @@ bool DomDomScheduleMgtClass::getShedulePoint(DateTime &dt, DomDomSchedulePoint *
 
     dt = ultimaHora;
     point = schedulePoints[puntoAnterior];
+
+    Serial.printf("[Debug] %d", puntoAnterior);
     return true;
 }
 
