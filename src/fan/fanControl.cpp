@@ -37,6 +37,7 @@ DomDomFanControlClass::DomDomFanControlClass()
 
     min_temp = FAN_MIN_TEMP;
     max_temp = FAN_MAX_TEMP;
+    _curr_temp = 0;
 
     oneWire = OneWire(FAN_TEMP_SENSOR_PIN);
     sensors = new DallasTemperature(&oneWire);
@@ -82,7 +83,7 @@ void DomDomFanControlClass::fanTask(void * parameter)
     while(DomDomFanControl.isStarted())
     {
         DomDomFanControl.update();
-        vTaskDelay(1000 / portTICK_PERIOD_MS);
+        vTaskDelay(10000 / portTICK_PERIOD_MS);
     }
 }
 
@@ -111,13 +112,17 @@ void DomDomFanControlClass::update()
     else
     {
         int rango_total = max_temp - calc_min_temp;
+        
         int valor_actual = _curr_temp - calc_min_temp;
         double porcentaje_actual = (valor_actual * 100) / rango_total / double(100);
-
         new_pwm = min_pwm + (max_pwm - min_pwm) * porcentaje_actual;
     }
 
-    setCurrentPWM(new_pwm);
+    if (new_pwm != curr_pwm)
+    {
+        setCurrentPWM(new_pwm);
+    }
+    
 }
 
 float DomDomFanControlClass::getTemperature()
@@ -157,19 +162,19 @@ float DomDomFanControlClass::getVoltaje()
     return value;
 }
 
-void DomDomFanControlClass::setCurrentPWM(int pwm)
+void DomDomFanControlClass::setCurrentPWM(uint16_t pwm)
 {
-    int max = pow(2,FAN_PWM_RESOLUTION);
+    uint16_t max = pow(2,FAN_PWM_RESOLUTION);
     if (pwm > max)
     {
+        Serial.printf("[FAN] ERROR: valor %hu pwm mayor que el maximo. Valor cambiado a %hu\n", pwm, max);
         pwm =  max;
-        Serial.printf("ERROR: valor pwm mayor que el maximo. Valor cambiado a %d\n", pwm);
     }
 
     if (pwm < 0)
     {
+        Serial.printf("[FAN] ERROR: valor %d pwm menor que 0. Valor cambiado a 0\n", pwm);
         pwm = 0;
-        Serial.printf("ERROR: valor pwm menor que el minimo. Valor cambiado a %d\n", pwm);
     }
 
     ledcWrite(FAN_PWM_CHANNEL, pwm);
@@ -182,15 +187,15 @@ bool DomDomFanControlClass::save()
     int address = EEPROM_FAN_ENABLED_ADDRESS;
     EEPROM.writeBool(address, _started);
     address += 1;
-    EEPROM.writeShort(address, max_pwm);
+    EEPROM.writeUShort(address, max_pwm);
     address += 2;
-    EEPROM.writeShort(address, min_pwm);
+    EEPROM.writeUShort(address, min_pwm);
     address += 2;
-    EEPROM.writeShort(address, max_temp);
+    EEPROM.writeUShort(address, max_temp);
     address += 2;
-    EEPROM.writeShort(address, min_temp);
+    EEPROM.writeUShort(address, min_temp);
     address += 2;
-    EEPROM.writeShort(address, curr_pwm);
+    EEPROM.writeUShort(address, curr_pwm);
 
     return EEPROM.commit();
 }
@@ -204,15 +209,15 @@ bool DomDomFanControlClass::load()
 
     int address = EEPROM_FAN_ENABLED_ADDRESS;
     address+=1;
-    max_pwm = EEPROM.readShort(address);
+    max_pwm = EEPROM.readUShort(address);
     address += 2;
-    min_pwm = EEPROM.readShort(address);
+    min_pwm = EEPROM.readUShort(address);
     address += 2;
-    max_temp = EEPROM.readShort(address);
+    max_temp = EEPROM.readUShort(address);
     address += 2;
-    min_temp = EEPROM.readShort(address);
+    min_temp = EEPROM.readUShort(address);
     address += 2;
-    setCurrentPWM(EEPROM.readShort(address));
+    setCurrentPWM(EEPROM.readUShort(address));
 
     if (EEPROM.readBool(EEPROM_FAN_ENABLED_ADDRESS))
     {

@@ -26,7 +26,7 @@
 #include "../wifi/WiFi.h"
 #include "configuration.h"
 
-#include "zones.h"
+//#include "zones.h"
 
 DomDomRTCClass::DomDomRTCClass(){}
 
@@ -112,20 +112,28 @@ void DomDomRTCClass::endNTP()
 
 void DomDomRTCClass::NTPTask(void * parameter)
 {
+    int ms = 0;
+    int step = 100;
     while(DomDomRTC.NTPStarted())
     {
-        int ms = 0;
-        if (DomDomRTC.updateFromNTP())
+        if (ms <= 0)
         {
-            ms = NTP_DELAY_ON_SUCCESS;
+            if (DomDomRTC.updateFromNTP())
+            {
+                ms = NTP_DELAY_ON_SUCCESS;
+            }
+            else
+            {
+                ms = NTP_DELAY_ON_FAILURE;
+                Serial.println("ERROR: NTP no recibio una respuesta.");
+            }
         }
         else
         {
-            ms = NTP_DELAY_ON_FAILURE;
-            Serial.println("ERROR: NTP no recibio una respuesta.");
-        };
-        
-        vTaskDelay(ms / portTICK_PERIOD_MS);
+            ms -= step;
+        }
+
+        vTaskDelay(step / portTICK_PERIOD_MS);
     }
 
     vTaskDelete(NULL);
@@ -188,6 +196,55 @@ void DomDomRTCClass::adjust(time_t dt)
     settimeofday((const timeval*)&epoch, 0);
 
     Serial.printf("[RTC] RTC interno ajustado a %s\n",nDate.timestamp().c_str());
+}
+
+bool DomDomRTCClass::save()
+{
+    EEPROM.writeString(EEPROM_NTP_SERVERNAME_ADDRESS, _ntpServerName);
+    EEPROM.writeString(EEPROM_NTP_TIMEZONENAME_ADDRESS, _ntpTimezone);
+    EEPROM.writeString(EEPROM_NTP_TIMEZONEPOSIX_ADDRESS, _ntpPosixZone);
+
+    return EEPROM.commit();
+}
+
+bool DomDomRTCClass::load()
+{
+    setNTPServername(EEPROM.readString(EEPROM_NTP_SERVERNAME_ADDRESS));
+    setNTPtimezone(
+        EEPROM.readString(EEPROM_NTP_TIMEZONENAME_ADDRESS),
+        EEPROM.readString(EEPROM_NTP_TIMEZONEPOSIX_ADDRESS)
+    );
+
+    return true;
+}
+
+void DomDomRTCClass::setNTPServername(String value)
+{
+    if (value.length() > EEPROM_NTP_SERVERNAME_ADDRESS)
+    {
+        Serial.printf("[ERROR] Longitud maxima superada para el nombre del servidor NTP");
+        return;
+    }
+
+    _ntpServerName = value;
+}
+
+void DomDomRTCClass::setNTPtimezone(String timezone, String posix)
+{
+    if (timezone.length() > EEPROM_NTP_TIMEZONENAME_LENGTH)
+    {
+        Serial.printf("[ERROR] Longitud maxima superada para la zona horaria");
+        return;
+    }
+
+    if (posix.length() > EEPROM_NTP_TIMEZONEPOSIX_LENGTH)
+    {
+        Serial.printf("[ERROR] Longitud maxima superada para el formato POSIX de la zona horaria");
+        return;
+    }
+
+    _ntpTimezone = timezone;
+    _ntpPosixZone = posix;
 }
 
 #if !defined(NO_GLOBAL_INSTANCES)

@@ -53,29 +53,42 @@ void initEEPROM()
     Serial.print("Detectado primer uso, inicializando EEPROM\n");
     EEPROM.write(1,1);
 
+    /** EEPROM del wifi */
     EEPROM.writeString(EEPROM_STA_SSID_NAME_ADDRESS, "");
     EEPROM.writeString(EEPROM_STA_PASSWORD_ADDRESS, "");
 
+    /** EEPROM del mDNS */
     EEPROM.write(EEPROM_MDNS_ENABLED_ADDRESS, MDNS_ENABLED);
     EEPROM.writeString(EEPROM_MDNS_HOSTNAME_ADDRESS, MDNS_HOSTNAME);
 
-    EEPROM.writeBool(EEPROM_NTP_ENABLED_ADDRESS, NTP_ENABLED);
-
+    /** EEPROM de la programacion */
     EEPROM.writeBool(EEPROM_SCHEDULE_STATUS_ADDRESS, true);
 
+    /** EEPROM del ventilador */
     int address = EEPROM_FAN_ENABLED_ADDRESS;
     EEPROM.writeBool(address, true);
     address++;
-    EEPROM.writeShort(address, pow(2, FAN_PWM_RESOLUTION));
+    EEPROM.writeUShort(address, pow(2, FAN_PWM_RESOLUTION));
     address += 2;
-    EEPROM.writeShort(address, 0);
+    EEPROM.writeUShort(address, 0);
     address += 2;
-    EEPROM.writeShort(address, 40);
+    EEPROM.writeUShort(address, 40);
     address += 2;
-    EEPROM.writeShort(address, 30);
+    EEPROM.writeUShort(address, 30);
     address += 2;
+    EEPROM.writeUShort(address, 0);
+    address += 2;
+    
+    /** EEPROM del servicio NTP */
+    EEPROM.writeBool(EEPROM_NTP_ENABLED_ADDRESS, NTP_ENABLED);
+    EEPROM.writeString(EEPROM_NTP_SERVERNAME_ADDRESS, NTP_SERVERNAME);
+    EEPROM.writeString(EEPROM_NTP_TIMEZONENAME_ADDRESS, NTP_TIMEZONE);
+    EEPROM.writeString(EEPROM_NTP_TIMEZONEPOSIX_ADDRESS, NTP_POSIX_TIMEZONE);
+
+    /** Confirmamos cambios */
     EEPROM.commit();
 
+    /** EEPROM canales */
     DomDomChannelMgt.initEEPROM();
 
   }
@@ -100,6 +113,7 @@ void setup()
   DomDomWifi.begin();
 
   // Inicializacion del RTC
+  DomDomRTC.load();
   DomDomRTC.begin();  
 
   // Configuracion de canales

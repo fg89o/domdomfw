@@ -86,23 +86,23 @@ class DomDomFanControlClass
         /**
          * Nivel PWM para cuando la temperatura maxima.
          */
-        int max_pwm;
+        uint16_t max_pwm;
         /**
          * Nivel PWM para la temperatura minima.
          */
-        int min_pwm;
+        uint16_t min_pwm;
         /**
          * PWM actual
          */
-        int curr_pwm;
+        uint16_t curr_pwm;
         /**
          * Temperatura para el valor min_pwm
          */
-        int min_temp;
+        uint16_t min_temp;
         /**
          * Temperatura para el valor max_pwm
          */
-        int max_temp;
+        uint16_t max_temp;
         /**
          * Voltaje al que esta funcionando el ventilador
          */
@@ -130,7 +130,7 @@ class DomDomFanControlClass
         /**
          * Establece el PWM para el ventialdor
          */
-        void setCurrentPWM(int pwm);
+        void setCurrentPWM(uint16_t pwm);
         /**
          * Guarda el estado actual en la memoria
          */

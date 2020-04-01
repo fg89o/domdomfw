@@ -62,9 +62,13 @@ class DomDomRTCClass
          */
         String _ntpServerName = NTP_SERVERNAME;
         /**
-         * Zona horaria
+         * Formato Posix de la zona horaria
          */
         String _ntpPosixZone = NTP_POSIX_TIMEZONE;
+        /**
+         * Nombre  de la zona horaria.
+         */
+        String _ntpTimezone = NTP_TIMEZONE;
         /**
          * Clase UDP para el servicio NTP.
          */
@@ -83,10 +87,6 @@ class DomDomRTCClass
          * Indica si la clase se inicio correctamente
          */
         bool ready;
-        /**
-         * Segundos de la zona horaria a la que se pertenezca
-         * */
-        int timeZone;
         /**
          * Ajusta el RTC interno y externo con la nueva fecha y hora
          */
@@ -117,13 +117,37 @@ class DomDomRTCClass
          */
         void setNTPEnabled(bool enabled);
         /**
+         * Cambia el servidor para el servicio NTP
+         */
+        void setNTPServername(String value);
+        /**
+         * Cambia la zona horaria a utilizar
+         */
+        void setNTPtimezone(String name, String posix);
+        /**
          * Indica si el NTP esta en ejecucion
          */
         bool NTPStarted() const { return _ntpStarted; };
         /**
          * Devuelve la zona horaria en formato POSIX
          */
+        String NTPTimezone() const { return _ntpTimezone; };
+        /**
+         * Devuelve la zona horaria en formato POSIX
+         */
         String NTPPosixZone() const { return _ntpPosixZone; };
+        /**
+         * Devuelve el servidor del NTP
+         */
+        String NTPServername() const { return _ntpServerName; };
+        /**
+         * Guarda los datos actuales en memoria
+         */
+        bool save();
+        /**
+         * Carga los datos disponibles en memoria
+         */
+        bool load();
 };
 
 #if !defined(NO_GLOBAL_INSTANCES)

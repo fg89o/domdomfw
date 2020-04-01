@@ -107,17 +107,19 @@ void DomDomWebServerClass::begin()
 
 void DomDomWebServerClass::getRTCData(AsyncWebServerRequest *request)
 {
-   AsyncResponseStream *response = request->beginResponseStream("application/json");
-    
-   StaticJsonDocument<1024> jsonDoc;
-   jsonDoc["ready"] = DomDomRTC.ready;
-   jsonDoc["enabled"] = DomDomRTC.NTPStarted();
-   jsonDoc["servername"] = NTP_SERVERNAME;
-   jsonDoc["unixtime"] = DomDomRTC.now().unixtime();
+    AsyncResponseStream *response = request->beginResponseStream("application/json");
 
-   serializeJson(jsonDoc, *response);
-   
-   SendResponse(request, response);
+    StaticJsonDocument<1024> jsonDoc;
+    jsonDoc["ready"] = DomDomRTC.ready;
+    jsonDoc["enabled"] = DomDomRTC.NTPStarted();
+    jsonDoc["servername"] = DomDomRTC.NTPServername();
+    jsonDoc["unixtime"] = DomDomRTC.now().unixtime();
+    jsonDoc["timezonePosix"] = DomDomRTC.NTPPosixZone();
+    jsonDoc["timezone"] = DomDomRTC.NTPTimezone();
+
+    serializeJson(jsonDoc, *response);
+
+    SendResponse(request, response);
 }
 
 void DomDomWebServerClass::setRTCData(AsyncWebServerRequest * request, uint8_t *data, size_t len, size_t index, size_t total)
@@ -163,8 +165,18 @@ void DomDomWebServerClass::setRTCData(AsyncWebServerRequest * request, uint8_t *
     else{
         Serial.printf("Habilitado servicio NTP\n");
         DomDomRTC.setNTPEnabled(true);
-        DomDomRTC.timeZone = doc["timezoneOffset"];
+        DomDomRTC.setNTPServername(doc["servername"]);
+        DomDomRTC.setNTPtimezone(
+            doc["timezone"],
+            doc["timezonePosix"]
+        );
+
+        DomDomRTC.endNTP();
+        delay(500);
+        DomDomRTC.beginNTP();
     }
+
+    DomDomRTC.save();
     
     Serial.printf("Nueva fecha %s\n",DomDomRTC.now().timestamp().c_str());
 

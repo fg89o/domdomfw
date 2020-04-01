@@ -85,6 +85,7 @@
 
 #define NTP_ENABLED             1
 #define NTP_SERVERNAME          "pool.ntp.org"
+#define NTP_TIMEZONE            "Europe/Madrid"
 #define NTP_POSIX_TIMEZONE      "CET-1CEST,M3.5.0,M10.5.0/3"
 #define NTP_DELAY_ON_FAILURE    10000
 #define NTP_DELAY_ON_SUCCESS    3600000
@@ -109,8 +110,7 @@
 //============================ EEPROM SECTION ===============================
 //===========================================================================
 
-
-#define EEPROM_SIZE                             EEPROM_FAN_ENABLED_ADDRESS + 10
+#define EEPROM_SIZE                             EEPROM_NTP_TIMEZONEPOSIX_ADDRESS + EEPROM_NTP_TIMEZONEPOSIX_LENGTH
 #define EEPROM_INIT_RETRIES                     10
 
 #define EEPROM_STA_ENABLED_ADDRESS              4
@@ -135,5 +135,13 @@
 #define EEPROM_MDNS_HOSTNAME_ADDRESS            EEPROM_MDNS_ENABLED_ADDRESS + 1
 
 #define EEPROM_FAN_ENABLED_ADDRESS              EEPROM_MDNS_HOSTNAME_ADDRESS + EEPROM_MDNS_HOSTNAME_LENGTH
+#define EEPROM_FAN_MEMORY_SIZE                  11
+
+#define EEPROM_NTP_SERVERNAME_ADDRESS           EEPROM_FAN_ENABLED_ADDRESS + EEPROM_FAN_MEMORY_SIZE
+#define EEPROM_NTP_SERVERNAME_LENGTH            32
+#define EEPROM_NTP_TIMEZONENAME_ADDRESS         EEPROM_NTP_SERVERNAME_ADDRESS + EEPROM_NTP_SERVERNAME_LENGTH
+#define EEPROM_NTP_TIMEZONENAME_LENGTH          32
+#define EEPROM_NTP_TIMEZONEPOSIX_ADDRESS        EEPROM_NTP_TIMEZONENAME_ADDRESS + EEPROM_NTP_TIMEZONENAME_LENGTH
+#define EEPROM_NTP_TIMEZONEPOSIX_LENGTH         32
 
 #endif /* GLOBAL_CONFIGURACION_h */
