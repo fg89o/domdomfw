@@ -32,10 +32,10 @@
 #define WIFI_STA_ENABLED 1
 
 // Define la red wifi a la que intetara conectase por defecto
-#define WIFI_STA_SSID_NAME "MIWIFI_2G_QQPJ"
+#define WIFI_STA_SSID_NAME "NOMBRE_DE_TU_WIFI"
 
 // Define el password de la red wifi por defecto
-#define WIFI_STA_PASSWORD "aFG6nxrr"
+#define WIFI_STA_PASSWORD "CONTRASEÑA_DEL_WIFI"
 
 // Nombre del AP que se creara para conectarse al equipo (32 digitos max.)
 #define WIFI_AP_SSID_NAME "DomDom"
@@ -71,9 +71,9 @@
 //============================ CHANNELS SECTION =============================
 //===========================================================================
 
-#define CHANNEL_SIZE            3
-#define CHANNEL_PWM_PINS        {25, 26, 27}
-#define CHANNEL_RESOLUTIONS     {10, 10, 10}
+#define CHANNEL_SIZE            8
+#define CHANNEL_PWM_PINS        {16, 4, 12, 14, 27, 26, 25, 33}
+#define CHANNEL_RESOLUTIONS     {10, 10, 10, 10, 10, 10, 10, 10}
 #define CHANNEL_MAX_LEDS_CONFIG 2
 
 //===========================================================================
@@ -94,17 +94,19 @@
 //============================ FAN SECTION ==================================
 //===========================================================================
 
-#define FAN_TEMP_SENSOR_PIN             33
-#define FAN_PWM_PIN                     5
-#define FAN_PWM_FEEDBACK_PIN            34
+#define FAN_TEMP_SENSOR_PIN             32
+#define FAN_TEMP_SENSOR_INDEX           0
+#define FAN_CHASIS_TEMP_SENSOR_INDEX    1
+
+#define FAN_PWM_PIN                     15
+#define FAN_CHASIS_PWM_PIN              2
 #define FAN_PWM_RESOLUTION              10
 #define FAN_PWM_CHANNEL                 11
+#define FAN_CHASIS_PWM_CHANNEL          12
+
 #define FAN_MIN_TEMP                    30
 #define FAN_MAX_TEMP                    40
 #define FAN_HISTERESIS                  2
-#define FAN_FEEDBACK_R1                 6800.0f
-#define FAN_FEEDBACK_R2                 4700.0f
-#define FAN_FEEDBACK_OFFSET             0.31f
 
 //===========================================================================
 //============================ EEPROM SECTION ===============================

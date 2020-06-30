@@ -24,8 +24,8 @@
 
 #include <Arduino.h>
 #include "configuration.h"
-#include "OneWire.h"
-#include "DallasTemperature.h"
+#include <OneWire.h>
+#include <DallasTemperature.h>
 
 /**
  * Clase para el control del ventilador
@@ -56,14 +56,6 @@ class DomDomFanControlClass
          * Valor de histeresis
          */
         int _histeresis;
-        /**
-         * Calcula el voltaje actual
-         */
-        float getVoltaje();
-        /**
-         * Mutex para el voltaje
-         */
-        SemaphoreHandle_t volt_xMutex;
         /**
          * Mutex para la temperatura
          */

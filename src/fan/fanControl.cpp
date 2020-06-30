@@ -24,33 +24,36 @@
 
 DomDomFanControlClass::DomDomFanControlClass()
 {
-    volt_xMutex = xSemaphoreCreateMutex();
-    temp_xMutex = xSemaphoreCreateMutex();
+    // temp_xMutex = xSemaphoreCreateMutex();
 
-    pinMode(FAN_PWM_PIN, OUTPUT);
-    pinMode(FAN_PWM_FEEDBACK_PIN, INPUT);
+    // pinMode(FAN_PWM_PIN, OUTPUT);
+    // pinMode(FAN_CHASIS_PWM_PIN, OUTPUT);
 
-    _histeresis = FAN_HISTERESIS;
-    min_pwm = 0;
-    curr_pwm = 0;
-    max_pwm = pow(2, FAN_PWM_RESOLUTION);
+    // _histeresis = FAN_HISTERESIS;
+    // min_pwm = 0;
+    // curr_pwm = 0;
+    // max_pwm = pow(2, FAN_PWM_RESOLUTION);
 
-    min_temp = FAN_MIN_TEMP;
-    max_temp = FAN_MAX_TEMP;
-    _curr_temp = 0;
+    // min_temp = FAN_MIN_TEMP;
+    // max_temp = FAN_MAX_TEMP;
+    // _curr_temp = 0;
+    // Serial.print(" \r\n=================== Paso por aqui =================/r/n");
 
-    oneWire = OneWire(FAN_TEMP_SENSOR_PIN);
-    sensors = new DallasTemperature(&oneWire);
-    sensors->begin();
+    // oneWire = OneWire(FAN_TEMP_SENSOR_PIN);
+    // sensors = new DallasTemperature(&oneWire);
+    // sensors->begin();
 
-    // configure LED PWM functionalitites
-    ledcSetup(FAN_PWM_CHANNEL, 5000, FAN_PWM_RESOLUTION);
-    
-    // attach the channel to be controlled
-    ledcAttachPin(FAN_PWM_PIN, LED_STATUS_CHANNEL);
+    // // configure LED PWM functionalitites
+    // ledcSetup(FAN_PWM_CHANNEL, 5000, FAN_PWM_RESOLUTION);
+    // ledcSetup(FAN_CHASIS_PWM_CHANNEL, 5000, FAN_PWM_RESOLUTION);
 
-    // init PWM
-    ledcWrite(LED_STATUS_CHANNEL, min_pwm);   
+    // // attach the channel to be controlled
+    // ledcAttachPin(FAN_PWM_PIN, FAN_PWM_CHANNEL);
+    // ledcAttachPin(FAN_CHASIS_PWM_PIN, FAN_CHASIS_PWM_CHANNEL);
+
+    // // init PWM
+    // ledcWrite(FAN_PWM_CHANNEL, min_pwm);   
+    // ledcWrite(FAN_CHASIS_PWM_CHANNEL, min_pwm); 
 }
 
 void DomDomFanControlClass::begin()
@@ -58,6 +61,36 @@ void DomDomFanControlClass::begin()
     if (!_started)
     {
         _started = true;
+
+        temp_xMutex = xSemaphoreCreateMutex();
+
+        pinMode(FAN_PWM_PIN, OUTPUT);
+        pinMode(FAN_CHASIS_PWM_PIN, OUTPUT);
+
+        _histeresis = FAN_HISTERESIS;
+        min_pwm = 0;
+        curr_pwm = 0;
+        max_pwm = pow(2, FAN_PWM_RESOLUTION);
+
+        min_temp = FAN_MIN_TEMP;
+        max_temp = FAN_MAX_TEMP;
+        _curr_temp = 0;
+
+        oneWire = OneWire(FAN_TEMP_SENSOR_PIN);
+        sensors = new DallasTemperature(&oneWire);
+        sensors->begin();
+
+        // configure LED PWM functionalitites
+        ledcSetup(FAN_PWM_CHANNEL, 5000, FAN_PWM_RESOLUTION);
+        ledcSetup(FAN_CHASIS_PWM_CHANNEL, 5000, FAN_PWM_RESOLUTION);
+
+        // attach the channel to be controlled
+        ledcAttachPin(FAN_PWM_PIN, FAN_PWM_CHANNEL);
+        ledcAttachPin(FAN_CHASIS_PWM_PIN, FAN_CHASIS_PWM_CHANNEL);
+
+        // init PWM
+        ledcWrite(FAN_PWM_CHANNEL, min_pwm);   
+        ledcWrite(FAN_CHASIS_PWM_CHANNEL, min_pwm); 
 
         xTaskCreate(
             this->fanTask,          /* Task function. */
@@ -83,17 +116,17 @@ void DomDomFanControlClass::fanTask(void * parameter)
     while(DomDomFanControl.isStarted())
     {
         DomDomFanControl.update();
-        vTaskDelay(10000 / portTICK_PERIOD_MS);
+        vTaskDelay(5000 / portTICK_PERIOD_MS);
     }
 }
 
 void DomDomFanControlClass::update()
 {
-    fan_voltaje = getVoltaje();
-
     int prev_temp = _curr_temp;         /* temperatura previa */
     _curr_temp = getTemperature();    /* temperatura del sensor */
 
+    Serial.printf("[FAN] valor %hu\n", _curr_temp);
+    
     int calc_min_temp = min_temp;
     if (_curr_temp < prev_temp && curr_pwm == 0) /* si la temperatura va descendiento y esta activo el pwm*/
     {
@@ -127,39 +160,14 @@ void DomDomFanControlClass::update()
 
 float DomDomFanControlClass::getTemperature()
 {
-    // xSemaphoreTake(temp_xMutex, portMAX_DELAY);
-    // sensors -> requestTemperatures(); 
-    // float temp = sensors->getTempCByIndex(0);
-    // xSemaphoreGive(temp_xMutex);
+    xSemaphoreTake(temp_xMutex, portMAX_DELAY);
 
-    return 25; /** Devolvemos un valor fijo hasta que tengamos la sonda instalada */
-}
+    sensors->requestTemperatures(); 
+    float temp = sensors->getTempCByIndex(FAN_TEMP_SENSOR_INDEX);
 
-float DomDomFanControlClass::getVoltaje()
-{
-    xSemaphoreTake(volt_xMutex, portMAX_DELAY);
+    xSemaphoreGive(temp_xMutex);
 
-    int samples_num = 10;
-
-    float ADBits = 4095;
-    float r1 = FAN_FEEDBACK_R1;
-    float r2 = FAN_FEEDBACK_R2;
-    float uPvolts = 3.29f;
-    float offset = FAN_FEEDBACK_OFFSET;
-
-    float value = 0.0f;
-    for (int i = 0; i < samples_num; i++)
-    {
-        value += analogRead(FAN_PWM_FEEDBACK_PIN);
-        delay(5);
-    }
-
-    xSemaphoreGive(volt_xMutex);
-
-    value = value / samples_num;
-    value = uPvolts * value / ADBits / r2 * (r1+r2) + offset;
-
-    return value;
+    return temp; 
 }
 
 void DomDomFanControlClass::setCurrentPWM(uint16_t pwm)
